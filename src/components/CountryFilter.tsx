@@ -1,64 +1,45 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import Flag from "react-world-flags";
+import { getCountries } from "@/services/eurovisionService";
 
 interface CountryFilterProps {
     selectedCountry: string | null;
     onCountryChange: (country: string | null) => void;
 }
 
-const countries = [
-    { code: "AL", name: "Albania" },
-    { code: "AM", name: "Armenia" },
-    { code: "AU", name: "Australia" },
-    { code: "AT", name: "Austria" },
-    { code: "AZ", name: "Azerbaijan" },
-    { code: "BY", name: "Belarus" },
-    { code: "BE", name: "Belgium" },
-    { code: "BA", name: "Bosnia & Herzegovina" },
-    { code: "BG", name: "Bulgaria" },
-    { code: "HR", name: "Croatia" },
-    { code: "CY", name: "Cyprus" },
-    { code: "CZ", name: "Czech Republic" },
-    { code: "DK", name: "Denmark" },
-    { code: "EE", name: "Estonia" },
-    { code: "FI", name: "Finland" },
-    { code: "FR", name: "France" },
-    { code: "GE", name: "Georgia" },
-    { code: "DE", name: "Germany" },
-    { code: "GR", name: "Greece" },
-    { code: "HU", name: "Hungary" },
-    { code: "IS", name: "Iceland" },
-    { code: "IE", name: "Ireland" },
-    { code: "IL", name: "Israel" },
-    { code: "IT", name: "Italy" },
-    { code: "LV", name: "Latvia" },
-    { code: "LT", name: "Lithuania" },
-    { code: "LU", name: "Luxembourg" },
-    { code: "MT", name: "Malta" },
-    { code: "MD", name: "Moldova" },
-    { code: "ME", name: "Montenegro" },
-    { code: "NL", name: "Netherlands" },
-    { code: "MK", name: "North Macedonia" },
-    { code: "NO", name: "Norway" },
-    { code: "PL", name: "Poland" },
-    { code: "PT", name: "Portugal" },
-    { code: "RO", name: "Romania" },
-    { code: "RU", name: "Russia" },
-    { code: "SM", name: "San Marino" },
-    { code: "RS", name: "Serbia" },
-    { code: "CS", name: "Serbia & Montenegro" },
-    { code: "SK", name: "Slovakia" },
-    { code: "SI", name: "Slovenia" },
-    { code: "ES", name: "Spain" },
-    { code: "SE", name: "Sweden" },
-    { code: "CH", name: "Switzerland" },
-    { code: "UA", name: "Ukraine" },
-    { code: "GB", name: "United Kingdom" },
-];
-
 const CountryFilter: React.FC<CountryFilterProps> = ({ selectedCountry, onCountryChange }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [countries, setCountries] = useState<{ code: string, name: string }[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // Fetch countries from API
+    useEffect(() => {
+        const fetchCountries = async () => {
+            try {
+                setLoading(true);
+                const countriesData = await getCountries();
+
+                // Transform the API response (which is an object) into an array of objects
+                const countriesArray = Object.entries(countriesData).map(([code, name]) => ({
+                    code,
+                    name: name as string
+                }));
+
+                setCountries(countriesArray);
+                setError(null);
+            } catch (err) {
+                setError("Failed to load countries");
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCountries();
+    }, []);
+
     // Sort countries alphabetically
     const sortedCountries = [...countries].sort((a, b) => a.name.localeCompare(b.name));
 
@@ -75,7 +56,7 @@ const CountryFilter: React.FC<CountryFilterProps> = ({ selectedCountry, onCountr
     }, []);
 
     // Find the selected country object
-    const selectedCountryObj = sortedCountries.find(country => country.name === selectedCountry);
+    const selectedCountryObj = sortedCountries.find(country => country.code === selectedCountry);
 
 
     return (
@@ -88,15 +69,18 @@ const CountryFilter: React.FC<CountryFilterProps> = ({ selectedCountry, onCountr
                     id="country-filter"
                     onClick={() => setIsOpen(!isOpen)}
                     className="w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3 text-left flex items-center justify-between"
+                    disabled={loading}
                 >
-                    {selectedCountryObj ? (
+                    {loading ? (
+                        <span className="text-gray-400">Loading countries...</span>
+                    ) : selectedCountryObj ? (
                         <div className="flex items-center gap-2">
-                            <span className="text-gray-500">{selectedCountryObj.name}</span>
                             <Flag
                                 code={selectedCountryObj.code}
                                 style={{ height: "1.5em", width: "2em" }}
                                 className="rounded inline-block"
                             />
+                            <span className="text-gray-500">{selectedCountryObj.name}</span>
                         </div>
                     ) : (
                         <span className="text-gray-400">All Countries</span>
@@ -134,12 +118,31 @@ const CountryFilter: React.FC<CountryFilterProps> = ({ selectedCountry, onCountr
                             <span className="text-gray-400">All Countries</span>
                             <span className="text-gray-500">🌐</span>
                         </div>
+
+                        {/* Loading indicator */}
+                        {loading && (
+                            <div className="py-4 text-center text-gray-500">
+                                <svg className="animate-spin h-5 w-5 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Loading countries...
+                            </div>
+                        )}
+
+                        {/* Error message */}
+                        {error && (
+                            <div className="py-4 text-center text-red-500">
+                                {error}
+                            </div>
+                        )}
+
                         {/* Options for each country */}
-                        {sortedCountries.map((country) => (
+                        {!loading && !error && sortedCountries.map((country) => (
                             <div
                                 key={country.code}
                                 onClick={() => {
-                                    onCountryChange(country.name);
+                                    onCountryChange(country.code);
                                     setIsOpen(false);
                                 }}
                                 className="cursor-pointer hover:bg-gray-100 py-2 px-3 flex items-center"
