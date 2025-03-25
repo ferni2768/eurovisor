@@ -42,7 +42,6 @@ export const countryNameToCode: Record<string, string> = {
     "Russia": "RU",
     "San Marino": "SM",
     "Serbia": "RS",
-    "Serbia & Montenegro": "CS",
     "Slovakia": "SK",
     "Slovenia": "SI",
     "Spain": "ES",

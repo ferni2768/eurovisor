@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import FilterSection from "@/components/FilterSection";
+import FilterStatusMessage from "@/components/FilterStatusMessage";
 import ResultsList from "@/components/ResultsList";
 import { EntryResult, Contest } from "@/types/eurovision";
 import {
@@ -126,11 +127,11 @@ export default function Home() {
           onCountryChange={setSelectedCountry}
         />
 
-        {showingWinners && (
-          <div className="mb-4 p-3 bg-yellow-100 border border-yellow-300 rounded-md text-center">
-            <span className="font-semibold text-black">🏆 Showing Eurovision Winners by Year 🏆</span>
-          </div>
-        )}
+        <FilterStatusMessage
+          selectedYear={selectedYear}
+          selectedCountry={selectedCountry}
+          showingWinners={showingWinners}
+        />
 
         <ResultsList
           results={results}
