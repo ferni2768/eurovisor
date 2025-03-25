@@ -32,7 +32,7 @@ interface CustomAnimationProps {
 const LazyCard: React.FC<LazyCardProps> = ({ result, index, numberOfColumns, initialRowCount }) => {
     const [ref, inView] = useInView({
         triggerOnce: true,
-        rootMargin: '0px', // Trigger animation only when in view
+        rootMargin: '0px',
         threshold: 0.1
     });
 
@@ -46,8 +46,8 @@ const LazyCard: React.FC<LazyCardProps> = ({ result, index, numberOfColumns, ini
         ? baseDelay * rowIndex + Math.random() * 0.1
         : 0.01;
     const initialScale = 0.95 + Math.random() * 0.03;
-    const initialY = 20 + Math.random() * 10;
-    const initialBlur = 2 + Math.random() * 2;
+    const initialY = 40 + Math.random() * 15;
+    const initialBlur = 5;
     const customProps: CustomAnimationProps = {
         delay,
         initialScale,
@@ -70,7 +70,7 @@ const LazyCard: React.FC<LazyCardProps> = ({ result, index, numberOfColumns, ini
             filter: "blur(0px)",
             transition: {
                 delay: custom.delay,
-                duration: 0.5 + Math.random() * 0.2,
+                duration: 0.4 + Math.random() * 0.2,
                 ease: "easeOut",
             },
         }),
@@ -80,7 +80,7 @@ const LazyCard: React.FC<LazyCardProps> = ({ result, index, numberOfColumns, ini
             y: -custom.initialY,
             filter: `blur(${custom.initialBlur}px)`,
             transition: {
-                duration: 0.5 + Math.random() * 0.2,
+                duration: 0.3 + Math.random() * 0.2,
                 ease: "easeIn",
             },
         }),
@@ -130,13 +130,22 @@ const ResultsList: React.FC<ResultsListProps> = ({
     const [initialRowCount, setInitialRowCount] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
 
+    // Track current visible results
+    const [visibleResults, setVisibleResults] = useState<EntryResult[]>([]);
+
+    // Track if we're in the exiting animation phase
+    const [isExiting, setIsExiting] = useState(false);
+
+    // Generate a unique key for the results list based on filters
+    const resultsKey = `${selectedYear || 'all'}-${selectedCountry || 'all'}-${showingWinners ? 'winners' : 'all'}`;
+
     // Calculate the total height of the results list
-    const calculateTotalHeight = () => {
-        if (!results.length) return 0;
+    const calculateTotalHeight = (resultsList: EntryResult[]) => {
+        if (!resultsList.length) return 0;
 
         const cardHeight = 200; // Estimated height of each card in pixels
         const gapSize = 24; // Gap size in pixels (6 in tailwind's gap-6)
-        const totalRows = Math.ceil(results.length / numberOfColumns);
+        const totalRows = Math.ceil(resultsList.length / numberOfColumns);
 
         // Calculate total height including gaps
         return totalRows * cardHeight + (totalRows - 1) * gapSize;
@@ -166,14 +175,39 @@ const ResultsList: React.FC<ResultsListProps> = ({
         setInitialRowCount(visibleRows);
     }, []);
 
-    if (loading) {
-        // Create a placeholder with the correct height during loading
-        const placeholderHeight = calculateTotalHeight();
+    // Handle changes to filters - this triggers exit animations
+    useEffect(() => {
+        // If we have visible results and filters change, trigger exit animations
+        if (visibleResults.length > 0) {
+            setIsExiting(true);
+        }
+    }, [selectedYear, selectedCountry, showingWinners]);
 
+    // Handle changes to results or loading state
+    useEffect(() => {
+        // If we're not in exiting state and have results, update visible results
+        if (!isExiting && results.length > 0 && !loading) {
+            setVisibleResults(results);
+        }
+        // If we're not exiting and have no results but are not loading, clear visible results
+        else if (!isExiting && results.length === 0 && !loading) {
+            setVisibleResults([]);
+        }
+    }, [results, loading, isExiting]);
+
+    // Handle animation completion
+    const handleExitComplete = () => {
+        setIsExiting(false);
+        // After exit animation completes, update to the latest results
+        setVisibleResults(loading ? [] : results);
+    };
+
+    // Initial loading state - no results yet and loading
+    if (visibleResults.length === 0 && loading && !isExiting) {
         return (
             <div
                 className="relative"
-                style={{ height: `${placeholderHeight}px` }}
+                style={{ height: "300px" }}
             >
                 <div className="absolute top-1/2 mt-10 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                     <svg
@@ -213,7 +247,7 @@ const ResultsList: React.FC<ResultsListProps> = ({
         );
     }
 
-    if (results.length === 0) {
+    if (visibleResults.length === 0 && !loading && !isExiting) {
         return (
             <div className="text-center py-8 text-gray-500">
                 <p>No results found. Try adjusting your filters.</p>
@@ -222,14 +256,18 @@ const ResultsList: React.FC<ResultsListProps> = ({
     }
 
     return (
-        <div className="mb-16">
-            <AnimatePresence mode="wait">
+        <div className="mb-16 relative">
+            <AnimatePresence
+                mode="wait"
+                onExitComplete={handleExitComplete}
+            >
                 <div
+                    key={isExiting ? "exiting-" + resultsKey : resultsKey}
                     ref={containerRef}
                     className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                    style={{ minHeight: `${calculateTotalHeight()}px` }}
+                    style={{ minHeight: `${calculateTotalHeight(visibleResults)}px` }}
                 >
-                    {results.map((result, index) => (
+                    {visibleResults.map((result, index) => (
                         <LazyCard
                             key={`${result.year}-${result.contestantId}`}
                             result={result}
@@ -240,6 +278,32 @@ const ResultsList: React.FC<ResultsListProps> = ({
                     ))}
                 </div>
             </AnimatePresence>
+
+            {/* Show loading spinner when exiting and loading new results */}
+            {isExiting && loading && (
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+                    <svg
+                        className="animate-spin h-10 w-10 text-indigo-500"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                    >
+                        <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                        ></circle>
+                        <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                    </svg>
+                </div>
+            )}
         </div>
     );
 };

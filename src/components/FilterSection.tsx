@@ -17,7 +17,6 @@ export default function FilterSection({
 }: FilterSectionProps) {
     return (
         <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">Filters</h2>
             <div className="flex flex-col md:flex-row gap-4">
                 <YearFilter
                     selectedYear={selectedYear}
