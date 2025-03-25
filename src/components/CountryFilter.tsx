@@ -75,11 +75,26 @@ const CountryFilter: React.FC<CountryFilterProps> = ({ selectedCountry, onCountr
                         <span className="text-gray-400">Loading countries...</span>
                     ) : selectedCountryObj ? (
                         <div className="flex items-center gap-2">
-                            <Flag
-                                code={selectedCountryObj.code}
-                                style={{ height: "1.5em", width: "2em" }}
-                                className="rounded inline-block"
-                            />
+                            {selectedCountryObj.code === "YU" ? (
+                                <div className="flex">
+                                    <Flag
+                                        code="RS"
+                                        style={{ height: "1.5em", width: "2em", marginRight: "2px" }}
+                                        className="rounded inline-block"
+                                    />
+                                    <Flag
+                                        code="ME"
+                                        style={{ height: "1.5em", width: "2em" }}
+                                        className="rounded inline-block"
+                                    />
+                                </div>
+                            ) : (
+                                <Flag
+                                    code={selectedCountryObj.code}
+                                    style={{ height: "1.5em", width: "2em" }}
+                                    className="rounded inline-block"
+                                />
+                            )}
                             <span className="text-gray-500">{selectedCountryObj.name}</span>
                         </div>
                     ) : (
@@ -147,11 +162,26 @@ const CountryFilter: React.FC<CountryFilterProps> = ({ selectedCountry, onCountr
                                 }}
                                 className="cursor-pointer hover:bg-gray-100 py-2 px-3 flex items-center"
                             >
-                                <Flag
-                                    code={country.code}
-                                    style={{ height: "1.5em", width: "2em" }}
-                                    className="rounded inline-block"
-                                />
+                                {country.code === "YU" ? (
+                                    <div className="flex">
+                                        <Flag
+                                            code="RS"
+                                            style={{ height: "1.5em", width: "2em", marginRight: "2px" }}
+                                            className="rounded inline-block"
+                                        />
+                                        <Flag
+                                            code="ME"
+                                            style={{ height: "1.5em", width: "2em" }}
+                                            className="rounded inline-block"
+                                        />
+                                    </div>
+                                ) : (
+                                    <Flag
+                                        code={country.code}
+                                        style={{ height: "1.5em", width: "2em" }}
+                                        className="rounded inline-block"
+                                    />
+                                )}
                                 <span className="ml-2 text-gray-500">{country.name}</span>
                             </div>
                         ))}

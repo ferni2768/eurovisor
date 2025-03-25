@@ -49,7 +49,6 @@ const VideoPlayer = memo(({ videoUrl, title, onLoad, isVisible }: {
     // Control iframe src based on visibility
     useEffect(() => {
         if (!iframeRef.current) return;
-
         if (isVisible) {
             // Only set src if it's not already set (to avoid reloading)
             if (!iframeRef.current.src) {
@@ -69,7 +68,7 @@ const VideoPlayer = memo(({ videoUrl, title, onLoad, isVisible }: {
             referrerPolicy="origin"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
-            className={`w-full h-64 rounded transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+            className={`absolute top-0 left-0 w-full h-full rounded transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
             onLoad={handleLoad}
             loading="lazy"
         />
@@ -211,11 +210,26 @@ export default function EntryCard({
 
                 <div className="flex items-center text-sm text-gray-500 mb-4">
                     <span className="flex items-center">
-                        <Flag
-                            code={country}
-                            style={{ height: "1.2em", width: "1.8em" }}
-                            className="rounded inline-block mr-1"
-                        />
+                        {country === "YU" ? (
+                            <div className="flex mr-1">
+                                <Flag
+                                    code="RS"
+                                    style={{ height: "1.2em", width: "1.8em", marginRight: "2px" }}
+                                    className="rounded inline-block"
+                                />
+                                <Flag
+                                    code="ME"
+                                    style={{ height: "1.2em", width: "1.8em" }}
+                                    className="rounded inline-block"
+                                />
+                            </div>
+                        ) : (
+                            <Flag
+                                code={country}
+                                style={{ height: "1.2em", width: "1.8em" }}
+                                className="rounded inline-block mr-1"
+                            />
+                        )}
                         {countryName}
                     </span>
                     <span className="mx-2">•</span>
@@ -240,19 +254,19 @@ export default function EntryCard({
 
                 <div
                     ref={videoContainerRef}
-                    className="aspect-w-16 aspect-h-9 mb-4 relative"
-                    style={{ height: '256px' }} // Fixed height to match iframe
+                    className="relative w-full mb-4"
+                    style={{ paddingTop: '56.25%' }} // 16:9 aspect ratio
                 >
                     {videoUrl && !loading && !error ? (
                         <>
                             {shouldShowVideoPlayer ? (
-                                <div className="w-full h-64 relative">
+                                <div className="absolute top-0 left-0 w-full h-full">
                                     {!videoLoaded && thumbnailUrl && (
                                         <div className="absolute inset-0 z-10">
                                             <img
                                                 src={thumbnailUrl}
                                                 alt=""
-                                                className="w-full h-64 object-cover rounded"
+                                                className="w-full h-full object-cover rounded"
                                             />
                                             <div className="absolute inset-0 flex items-center justify-center">
                                                 <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
@@ -267,17 +281,17 @@ export default function EntryCard({
                                     />
                                 </div>
                             ) : (
-                                <div className="w-full h-64 relative">
+                                <div className="absolute top-0 left-0 w-full h-full">
                                     {thumbnailUrl ? (
                                         <img
                                             src={thumbnailUrl}
                                             alt=""
-                                            className="w-full h-64 object-cover rounded"
+                                            className="w-full h-full object-cover rounded"
                                             loading="eager"
                                             fetchPriority="high"
                                         />
                                     ) : (
-                                        <div className="w-full h-64 bg-gray-300 animate-pulse rounded" />
+                                        <div className="w-full h-full bg-gray-300 animate-pulse rounded" />
                                     )}
                                     <div className="absolute inset-0 flex items-center justify-center">
                                         <svg
@@ -294,9 +308,9 @@ export default function EntryCard({
                             )}
                         </>
                     ) : loading ? (
-                        <div className="w-full h-64 bg-gray-300 animate-pulse rounded" />
+                        <div className="absolute top-0 left-0 w-full h-full bg-gray-300 animate-pulse rounded" />
                     ) : error ? (
-                        <div className="text-center py-4 text-red-500 h-64 flex items-center justify-center">
+                        <div className="absolute top-0 left-0 w-full h-full text-center py-4 text-red-500 flex items-center justify-center">
                             <p>{error}</p>
                         </div>
                     ) : null}
