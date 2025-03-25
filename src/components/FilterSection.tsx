@@ -1,4 +1,5 @@
 "use client";
+import { motion } from "framer-motion";
 import YearFilter from "@/components/YearFilter";
 import CountryFilter from "@/components/CountryFilter";
 
@@ -16,7 +17,13 @@ export default function FilterSection({
     onCountryChange
 }: FilterSectionProps) {
     return (
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <motion.div
+            className="bg-white rounded-lg shadow p-6 mb-8"
+            layout
+            transition={{
+                layout: { duration: 0.3, ease: "easeInOut" }
+            }}
+        >
             <div className="flex flex-col md:flex-row gap-4">
                 <YearFilter
                     selectedYear={selectedYear}
@@ -27,6 +34,6 @@ export default function FilterSection({
                     onCountryChange={onCountryChange}
                 />
             </div>
-        </div>
+        </motion.div>
     );
 }

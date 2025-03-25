@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface YearFilterProps {
     selectedYear: number | null;
@@ -31,11 +32,20 @@ const YearFilter: React.FC<YearFilterProps> = ({ selectedYear, onYearChange }) =
             <label htmlFor="year-filter" className="block text-sm font-medium text-gray-700 mb-1">
                 Filter by Year
             </label>
-            <div className="flex gap-2">
-                <button
+            <motion.div
+                className="flex"
+                layout
+                transition={{
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 30
+                }}
+            >
+                <motion.button
                     id="year-filter"
                     onClick={() => setIsOpen(!isOpen)}
-                    className="w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3 text-left flex items-center justify-between"
+                    className="w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3 mr-2 text-left flex items-center justify-between"
+                    layout
                 >
                     {selectedYear ? (
                         <span className="text-gray-500">{selectedYear}</span>
@@ -45,21 +55,36 @@ const YearFilter: React.FC<YearFilterProps> = ({ selectedYear, onYearChange }) =
                     <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
-                </button>
-                {selectedYear && (
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onYearChange(null);
-                            setIsOpen(false);
-                        }}
-                        className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded"
-                        aria-label="Clear year filter"
-                    >
-                        ✕
-                    </button>
-                )}
-            </div>
+                </motion.button>
+
+                <AnimatePresence>
+                    {selectedYear && (
+                        <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: "50px" }}
+                            exit={{ width: 0 }}
+                            transition={{
+                                duration: 0.3,
+                                ease: "easeInOut"
+                            }}
+                            className="overflow-hidden"
+                        >
+                            <motion.button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onYearChange(null);
+                                    setIsOpen(false);
+                                }}
+                                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded w-[40px] h-full flex items-center justify-center"
+                                aria-label="Clear year filter"
+                                style={{ minWidth: "40px" }}
+                            >
+                                ✕
+                            </motion.button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </motion.div>
 
             <div className="w-full relative">
                 {isOpen && (

@@ -50,6 +50,7 @@ export const countryNameToCode: Record<string, string> = {
     "Turkey": "TR",
     "Ukraine": "UA",
     "United Kingdom": "GB",
+    "Wales": "GB-WLS",
     "Yugoslavia": "YU"
 };
 
