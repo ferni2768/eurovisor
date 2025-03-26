@@ -27,7 +27,7 @@ OverlayScrollbars.plugin(SizeObserverPlugin);
 // Custom CSS for scrollbar
 const customScrollbarStyles = `
   .os-scrollbar {
-    --os-size: 12px; /* Increase scrollbar thickness (default is 10px) */
+    --os-size: 12px;
     --os-padding-perpendicular: 2px;
   }
   
@@ -54,7 +54,7 @@ export default function Home() {
     options: {
       scrollbars: {
         theme: 'os-theme-dark',
-        autoHide: 'move',
+        autoHide: 'scroll',
         autoHideDelay: 400,
         dragScroll: true,
         clickScroll: true,

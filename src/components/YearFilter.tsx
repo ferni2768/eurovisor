@@ -7,7 +7,7 @@ import 'overlayscrollbars/overlayscrollbars.css';
 // Custom CSS for the scrollbar
 const customScrollbarStyles = `
   .os-scrollbar {
-    --os-size: 12px; /* Increase scrollbar thickness (default is 10px) */
+    --os-size: 12px;
     --os-padding-perpendicular: 2px;
   }
   
@@ -20,6 +20,7 @@ const customScrollbarStyles = `
 const variants = {
     open: {
         height: "auto",
+        borderRadius: "0 0 1.5rem 1.5rem",
         transition: {
             type: "spring",
             stiffness: 350,
@@ -29,6 +30,7 @@ const variants = {
     },
     closed: {
         height: 0,
+        borderRadius: "1.5rem",
         transition: {
             type: "tween",
             duration: 0.15,
@@ -79,76 +81,47 @@ const YearFilter: React.FC<YearFilterProps> = ({ selectedYear, onYearChange }) =
             <label htmlFor="year-filter" className="block text-sm font-medium text-gray-700 mb-1">
                 Filter by Year
             </label>
-            <motion.div
-                className="flex"
-                layout
-                transition={{
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 30
-                }}
-            >
-                <motion.button
-                    id="year-filter"
-                    onClick={() => setIsOpen(!isOpen)}
-                    className="w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3 mr-2 text-left flex items-center justify-between"
-                    layout
-                >
-                    {selectedYear ? (
-                        <span className="text-gray-500">{selectedYear}</span>
-                    ) : (
-                        <span className="text-gray-400">All Years</span>
-                    )}
-                    <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                </motion.button>
-
-                <AnimatePresence>
-                    {selectedYear && (
-                        <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: "50px" }}
-                            exit={{ width: 0 }}
-                            transition={{
-                                duration: 0.3,
+            <div className="flex items-center">
+                <div className="relative flex-grow">
+                    <motion.button
+                        id="year-filter"
+                        onClick={() => setIsOpen(!isOpen)}
+                        className="w-full border border-gray-300 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-indigo-500 py-2 px-5 text-left flex items-center justify-between transition-all duration-200 cursor-pointer"
+                        layout
+                        animate={{
+                            borderRadius: isOpen ? "1.5rem 1.5rem 0 0" : "1.5rem",
+                        }}
+                        transition={{
+                            borderRadius: {
+                                duration: 0.2,
                                 ease: "easeInOut"
-                            }}
-                            className="overflow-hidden"
-                        >
-                            <motion.button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onYearChange(null);
-                                    setIsOpen(false);
-                                }}
-                                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded w-[40px] h-full flex items-center justify-center"
-                                aria-label="Clear year filter"
-                                style={{ minWidth: "40px" }}
-                            >
-                                ✕
-                            </motion.button>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </motion.div>
-
-            <div className="mr-2 z-10">
-                <div className="w-full relative">
+                            }
+                        }}
+                    >
+                        {selectedYear ? (
+                            <span className="text-gray-500">{selectedYear}</span>
+                        ) : (
+                            <span className="text-gray-400">All Years</span>
+                        )}
+                        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </motion.button>
                     <AnimatePresence>
                         {isOpen && (
                             <motion.div
                                 variants={variants}
                                 initial="closed"
-                                animate={isOpen ? "open" : "closed"}
+                                animate="open"
                                 exit="closed"
-                                className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg overflow-hidden"
+                                className="absolute z-10 w-full bg-white border border-gray-300 shadow-lg overflow-hidden"
+                                style={{ borderTop: "none" }}
                             >
                                 <OverlayScrollbarsComponent
                                     options={{
                                         scrollbars: {
                                             theme: "os-theme-dark",
-                                            autoHide: "never",
+                                            autoHide: "scroll",
                                             autoHideDelay: 400,
                                             dragScroll: true,
                                             clickScroll: true,
@@ -158,7 +131,7 @@ const YearFilter: React.FC<YearFilterProps> = ({ selectedYear, onYearChange }) =
                                             y: "scroll",
                                         },
                                     }}
-                                    className="max-h-72"
+                                    className="max-h-72 pt-2 pb-2 pl-2 pr-3"
                                 >
                                     {/* Option for "All Years" */}
                                     <div
@@ -166,7 +139,7 @@ const YearFilter: React.FC<YearFilterProps> = ({ selectedYear, onYearChange }) =
                                             onYearChange(null);
                                             setIsOpen(false);
                                         }}
-                                        className="cursor-pointer hover:bg-gray-100 py-2 px-3 flex items-center justify-between"
+                                        className="cursor-pointer hover:bg-gray-100 rounded-2xl py-2 px-3 flex items-center justify-between"
                                     >
                                         <span className="text-gray-400">All Years</span>
                                     </div>
@@ -178,7 +151,7 @@ const YearFilter: React.FC<YearFilterProps> = ({ selectedYear, onYearChange }) =
                                                 onYearChange(year);
                                                 setIsOpen(false);
                                             }}
-                                            className="cursor-pointer hover:bg-gray-100 py-2 px-3 flex items-center"
+                                            className="cursor-pointer hover:bg-gray-100 rounded-2xl py-2 px-3 flex items-center"
                                         >
                                             <span className="text-gray-500">{year}</span>
                                         </div>
@@ -188,6 +161,33 @@ const YearFilter: React.FC<YearFilterProps> = ({ selectedYear, onYearChange }) =
                         )}
                     </AnimatePresence>
                 </div>
+                <AnimatePresence>
+                    {selectedYear && (
+                        <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: "40px" }}
+                            exit={{ width: 0 }}
+                            transition={{
+                                duration: 0.3,
+                                ease: "easeInOut"
+                            }}
+                            className="ml-2 overflow-hidden"
+                        >
+                            <motion.button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onYearChange(null);
+                                    setIsOpen(false);
+                                }}
+                                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full w-[40px] h-full flex items-center justify-center"
+                                aria-label="Clear year filter"
+                                style={{ minWidth: "40px" }}
+                            >
+                                ✕
+                            </motion.button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     );
