@@ -17,6 +17,27 @@ const customScrollbarStyles = `
   }
 `;
 
+// Animation variants for dropdown
+const variants = {
+    open: {
+        height: "auto",
+        transition: {
+            type: "spring",
+            stiffness: 350,
+            damping: 25,
+            mass: 0.75,
+        },
+    },
+    closed: {
+        height: 0,
+        transition: {
+            type: "tween",
+            duration: 0.15,
+            ease: "easeOut",
+        },
+    },
+};
+
 interface CountryFilterProps {
     selectedCountry: string | null;
     onCountryChange: (country: string | null) => void;
@@ -179,107 +200,117 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
                 </AnimatePresence>
             </motion.div>
 
-            <div className="w-full relative">
-                {isOpen && (
-                    <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg">
-                        <OverlayScrollbarsComponent
-                            options={{
-                                scrollbars: {
-                                    theme: "os-theme-dark",
-                                    autoHide: "never",
-                                    autoHideDelay: 400,
-                                    dragScroll: true,
-                                    clickScroll: true,
-                                },
-                                overflow: { x: "hidden", y: "scroll" },
-                            }}
-                            className="max-h-72"
-                        >
-                            {/* Option for "All Countries" */}
-                            <div
-                                onClick={() => {
-                                    onCountryChange(null);
-                                    setIsOpen(false);
-                                }}
-                                className="cursor-pointer hover:bg-gray-100 py-2 px-3 flex items-center justify-between"
+            <div className="mr-2">
+                <div className="w-full relative">
+                    <AnimatePresence>
+                        {isOpen && (
+                            <motion.div
+                                variants={variants}
+                                initial="closed"
+                                animate={isOpen ? "open" : "closed"}
+                                exit="closed"
+                                className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg overflow-hidden"
                             >
-                                <span className="text-gray-400">All Countries</span>
-                            </div>
-
-                            {/* Loading indicator */}
-                            {loading && (
-                                <div className="py-4 text-center text-gray-500">
-                                    <svg
-                                        className="animate-spin h-5 w-5 mx-auto mb-2"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <circle
-                                            className="opacity-25"
-                                            cx="12"
-                                            cy="12"
-                                            r="10"
-                                            stroke="currentColor"
-                                            strokeWidth="4"
-                                        ></circle>
-                                        <path
-                                            className="opacity-75"
-                                            fill="currentColor"
-                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                        ></path>
-                                    </svg>
-                                    Loading countries...
-                                </div>
-                            )}
-
-                            {/* Error message */}
-                            {error && (
-                                <div className="py-4 text-center text-red-500">{error}</div>
-                            )}
-
-                            {/* Options for each country */}
-                            {!loading &&
-                                !error &&
-                                sortedCountries.map((country) => (
+                                <OverlayScrollbarsComponent
+                                    options={{
+                                        scrollbars: {
+                                            theme: "os-theme-dark",
+                                            autoHide: "never",
+                                            autoHideDelay: 400,
+                                            dragScroll: true,
+                                            clickScroll: true,
+                                        },
+                                        overflow: { x: "hidden", y: "scroll" },
+                                    }}
+                                    className="max-h-72"
+                                >
+                                    {/* Option for "All Countries" */}
                                     <div
-                                        key={country.code}
                                         onClick={() => {
-                                            onCountryChange(country.code);
+                                            onCountryChange(null);
                                             setIsOpen(false);
                                         }}
-                                        className="cursor-pointer hover:bg-gray-100 py-2 px-3 flex items-center"
+                                        className="cursor-pointer hover:bg-gray-100 py-2 px-3 flex items-center justify-between"
                                     >
-                                        {country.code === "YU" ? (
-                                            <div className="flex">
-                                                <Flag
-                                                    code="RS"
-                                                    style={{
-                                                        height: "1.5em",
-                                                        width: "2em",
-                                                        marginRight: "2px",
-                                                    }}
-                                                    className="rounded inline-block"
-                                                />
-                                                <Flag
-                                                    code="ME"
-                                                    style={{ height: "1.5em", width: "2em" }}
-                                                    className="rounded inline-block"
-                                                />
-                                            </div>
-                                        ) : (
-                                            <Flag
-                                                code={country.code}
-                                                style={{ height: "1.5em", width: "2em" }}
-                                                className="rounded inline-block"
-                                            />
-                                        )}
-                                        <span className="ml-2 text-gray-500">{country.name}</span>
+                                        <span className="text-gray-400">All Countries</span>
                                     </div>
-                                ))}
-                        </OverlayScrollbarsComponent>
-                    </div>
-                )}
+
+                                    {/* Loading indicator */}
+                                    {loading && (
+                                        <div className="py-4 text-center text-gray-500">
+                                            <svg
+                                                className="animate-spin h-5 w-5 mx-auto mb-2"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <circle
+                                                    className="opacity-25"
+                                                    cx="12"
+                                                    cy="12"
+                                                    r="10"
+                                                    stroke="currentColor"
+                                                    strokeWidth="4"
+                                                ></circle>
+                                                <path
+                                                    className="opacity-75"
+                                                    fill="currentColor"
+                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                ></path>
+                                            </svg>
+                                            Loading countries...
+                                        </div>
+                                    )}
+
+                                    {/* Error message */}
+                                    {error && (
+                                        <div className="py-4 text-center text-red-500">{error}</div>
+                                    )}
+
+                                    {/* Options for each country */}
+                                    {!loading &&
+                                        !error &&
+                                        sortedCountries.map((country) => (
+                                            <div
+                                                key={country.code}
+                                                onClick={() => {
+                                                    onCountryChange(country.code);
+                                                    setIsOpen(false);
+                                                }}
+                                                className="cursor-pointer hover:bg-gray-100 py-2 px-3 flex items-center"
+                                            >
+                                                {country.code === "YU" ? (
+                                                    <div className="flex">
+                                                        <Flag
+                                                            code="RS"
+                                                            style={{
+                                                                height: "1.5em",
+                                                                width: "2em",
+                                                                marginRight: "2px",
+                                                            }}
+                                                            className="rounded inline-block"
+                                                        />
+                                                        <Flag
+                                                            code="ME"
+                                                            style={{ height: "1.5em", width: "2em" }}
+                                                            className="rounded inline-block"
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <Flag
+                                                        code={country.code}
+                                                        style={{ height: "1.5em", width: "2em" }}
+                                                        className="rounded inline-block"
+                                                    />
+                                                )}
+                                                <span className="ml-2 text-gray-500">{country.name}</span>
+                                            </div>
+                                        ))}
+                                </OverlayScrollbarsComponent>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
             </div>
         </div>
     );

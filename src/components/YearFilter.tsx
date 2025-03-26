@@ -17,6 +17,26 @@ const customScrollbarStyles = `
   }
 `;
 
+const variants = {
+    open: {
+        height: "auto",
+        transition: {
+            type: "spring",
+            stiffness: 350,
+            damping: 25,
+            mass: 0.75,
+        },
+    },
+    closed: {
+        height: 0,
+        transition: {
+            type: "tween",
+            duration: 0.15,
+            ease: "easeOut",
+        },
+    },
+};
+
 interface YearFilterProps {
     selectedYear: number | null;
     onYearChange: (year: number | null) => void;
@@ -113,51 +133,61 @@ const YearFilter: React.FC<YearFilterProps> = ({ selectedYear, onYearChange }) =
                 </AnimatePresence>
             </motion.div>
 
-            <div className="w-full relative">
-                {isOpen && (
-                    <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg">
-                        <OverlayScrollbarsComponent
-                            options={{
-                                scrollbars: {
-                                    theme: 'os-theme-dark',
-                                    autoHide: 'never',
-                                    autoHideDelay: 400,
-                                    dragScroll: true,
-                                    clickScroll: true,
-                                },
-                                overflow: {
-                                    x: 'hidden',
-                                    y: 'scroll',
-                                }
-                            }}
-                            className="max-h-72"
-                        >
-                            {/* Option for "All Years" */}
-                            <div
-                                onClick={() => {
-                                    onYearChange(null);
-                                    setIsOpen(false);
-                                }}
-                                className="cursor-pointer hover:bg-gray-100 py-2 px-3 flex items-center justify-between"
+            <div className="mr-2 z-10">
+                <div className="w-full relative">
+                    <AnimatePresence>
+                        {isOpen && (
+                            <motion.div
+                                variants={variants}
+                                initial="closed"
+                                animate={isOpen ? "open" : "closed"}
+                                exit="closed"
+                                className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg overflow-hidden"
                             >
-                                <span className="text-gray-400">All Years</span>
-                            </div>
-                            {/* Options for each year */}
-                            {years.map((year) => (
-                                <div
-                                    key={year}
-                                    onClick={() => {
-                                        onYearChange(year);
-                                        setIsOpen(false);
+                                <OverlayScrollbarsComponent
+                                    options={{
+                                        scrollbars: {
+                                            theme: "os-theme-dark",
+                                            autoHide: "never",
+                                            autoHideDelay: 400,
+                                            dragScroll: true,
+                                            clickScroll: true,
+                                        },
+                                        overflow: {
+                                            x: "hidden",
+                                            y: "scroll",
+                                        },
                                     }}
-                                    className="cursor-pointer hover:bg-gray-100 py-2 px-3 flex items-center"
+                                    className="max-h-72"
                                 >
-                                    <span className="text-gray-500">{year}</span>
-                                </div>
-                            ))}
-                        </OverlayScrollbarsComponent>
-                    </div>
-                )}
+                                    {/* Option for "All Years" */}
+                                    <div
+                                        onClick={() => {
+                                            onYearChange(null);
+                                            setIsOpen(false);
+                                        }}
+                                        className="cursor-pointer hover:bg-gray-100 py-2 px-3 flex items-center justify-between"
+                                    >
+                                        <span className="text-gray-400">All Years</span>
+                                    </div>
+                                    {/* Options for each year */}
+                                    {years.map((year) => (
+                                        <div
+                                            key={year}
+                                            onClick={() => {
+                                                onYearChange(year);
+                                                setIsOpen(false);
+                                            }}
+                                            className="cursor-pointer hover:bg-gray-100 py-2 px-3 flex items-center"
+                                        >
+                                            <span className="text-gray-500">{year}</span>
+                                        </div>
+                                    ))}
+                                </OverlayScrollbarsComponent>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
             </div>
         </div>
     );
