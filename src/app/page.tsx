@@ -12,6 +12,31 @@ import {
   fetchCountryInYear
 } from "@/lib/dataFetchers";
 
+import 'overlayscrollbars/overlayscrollbars.css';
+import { useOverlayScrollbars } from "overlayscrollbars-react";
+import {
+  OverlayScrollbars,
+  ScrollbarsHidingPlugin,
+  SizeObserverPlugin
+} from "overlayscrollbars";
+
+// Register plugins
+OverlayScrollbars.plugin(ScrollbarsHidingPlugin);
+OverlayScrollbars.plugin(SizeObserverPlugin);
+
+// Custom CSS for scrollbar
+const customScrollbarStyles = `
+  .os-scrollbar {
+    --os-size: 12px; /* Increase scrollbar thickness (default is 10px) */
+    --os-padding-perpendicular: 2px;
+  }
+  
+  /* Additional styling for the scrollbar */
+  .os-scrollbar-handle {
+    border-radius: 10px;
+  }
+`;
+
 export default function Home() {
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
@@ -23,6 +48,57 @@ export default function Home() {
   const [countryNames, setCountryNames] = useState<Record<string, string>>({});
   const [initialDataLoaded, setInitialDataLoaded] = useState<boolean>(false);
   const [showingWinners, setShowingWinners] = useState<boolean>(false);
+
+  // Initialize OverlayScrollbars
+  const [initialize, instance] = useOverlayScrollbars({
+    options: {
+      scrollbars: {
+        theme: 'os-theme-dark',
+        autoHide: 'move',
+        autoHideDelay: 400,
+        dragScroll: true,
+        clickScroll: true,
+      },
+      overflow: {
+        x: 'hidden',
+        y: 'scroll',
+      }
+    },
+    defer: true
+  });
+
+  // Apply custom scrollbar styles
+  useEffect(() => {
+    // Add custom styles to the document
+    const styleElement = document.createElement('style');
+    styleElement.textContent = customScrollbarStyles;
+    document.head.appendChild(styleElement);
+
+    return () => {
+      // Clean up styles when component unmounts
+      document.head.removeChild(styleElement);
+    };
+  }, []);
+
+  // Apply OverlayScrollbars to the body when component mounts
+  useEffect(() => {
+    // Add initialization attributes to prevent flickering
+    document.documentElement.setAttribute('data-overlayscrollbars-initialize', '');
+    document.body.setAttribute('data-overlayscrollbars-initialize', '');
+
+    // Initialize OverlayScrollbars on the body
+    initialize(document.body);
+
+    // Clean up when component unmounts
+    return () => {
+      const osInstance = instance();
+      if (osInstance) {
+        osInstance.destroy();
+      }
+      document.documentElement.removeAttribute('data-overlayscrollbars-initialize');
+      document.body.removeAttribute('data-overlayscrollbars-initialize');
+    };
+  }, [initialize, instance]);
 
   // Fetch country names and contests on initial load
   useEffect(() => {

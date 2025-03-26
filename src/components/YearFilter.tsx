@@ -1,6 +1,21 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
+import 'overlayscrollbars/overlayscrollbars.css';
+
+// Custom CSS for the scrollbar
+const customScrollbarStyles = `
+  .os-scrollbar {
+    --os-size: 12px; /* Increase scrollbar thickness (default is 10px) */
+    --os-padding-perpendicular: 2px;
+  }
+  
+  /* Additional styling for the scrollbar */
+  .os-scrollbar-handle {
+    border-radius: 10px;
+  }
+`;
 
 interface YearFilterProps {
     selectedYear: number | null;
@@ -14,8 +29,20 @@ const YearFilter: React.FC<YearFilterProps> = ({ selectedYear, onYearChange }) =
     // State for dropdown
     const [isOpen, setIsOpen] = useState(false);
 
-    // Close dropdown when clicking outside
+    // Ref for dropdown
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Apply custom scrollbar styles
+    useEffect(() => {
+        if (!document.getElementById('os-custom-styles')) {
+            const styleElement = document.createElement('style');
+            styleElement.id = 'os-custom-styles';
+            styleElement.textContent = customScrollbarStyles;
+            document.head.appendChild(styleElement);
+        }
+    }, []);
+
+    // Close dropdown when clicking outside
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -88,30 +115,47 @@ const YearFilter: React.FC<YearFilterProps> = ({ selectedYear, onYearChange }) =
 
             <div className="w-full relative">
                 {isOpen && (
-                    <div className="absolute z-10 mt-1 w-full max-h-72 bg-white border border-gray-300 rounded-md shadow-lg overflow-y-auto">
-                        {/* Option for "All Years" */}
-                        <div
-                            onClick={() => {
-                                onYearChange(null);
-                                setIsOpen(false);
+                    <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg">
+                        <OverlayScrollbarsComponent
+                            options={{
+                                scrollbars: {
+                                    theme: 'os-theme-dark',
+                                    autoHide: 'never',
+                                    autoHideDelay: 400,
+                                    dragScroll: true,
+                                    clickScroll: true,
+                                },
+                                overflow: {
+                                    x: 'hidden',
+                                    y: 'scroll',
+                                }
                             }}
-                            className="cursor-pointer hover:bg-gray-100 py-2 px-3 flex items-center justify-between"
+                            className="max-h-72"
                         >
-                            <span className="text-gray-400">All Years</span>
-                        </div>
-                        {/* Options for each year */}
-                        {years.map((year) => (
+                            {/* Option for "All Years" */}
                             <div
-                                key={year}
                                 onClick={() => {
-                                    onYearChange(year);
+                                    onYearChange(null);
                                     setIsOpen(false);
                                 }}
-                                className="cursor-pointer hover:bg-gray-100 py-2 px-3 flex items-center"
+                                className="cursor-pointer hover:bg-gray-100 py-2 px-3 flex items-center justify-between"
                             >
-                                <span className="text-gray-500">{year}</span>
+                                <span className="text-gray-400">All Years</span>
                             </div>
-                        ))}
+                            {/* Options for each year */}
+                            {years.map((year) => (
+                                <div
+                                    key={year}
+                                    onClick={() => {
+                                        onYearChange(year);
+                                        setIsOpen(false);
+                                    }}
+                                    className="cursor-pointer hover:bg-gray-100 py-2 px-3 flex items-center"
+                                >
+                                    <span className="text-gray-500">{year}</span>
+                                </div>
+                            ))}
+                        </OverlayScrollbarsComponent>
                     </div>
                 )}
             </div>
