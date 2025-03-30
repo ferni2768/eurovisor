@@ -68,7 +68,7 @@ const VideoPlayer = memo(({ videoUrl, title, onLoad, isVisible }: {
             referrerPolicy="origin"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
-            className={`absolute top-0 left-0 w-full h-full rounded transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+            className={`absolute top-0 left-0 w-full h-full rounded-xl transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
             onLoad={handleLoad}
             loading="lazy"
         />
@@ -198,7 +198,7 @@ export default function EntryCard({
     const shouldShowVideoPlayer = isInView && (isCurrentlyVisible || videoLoaded);
 
     return (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:shadow-lg hover:-translate-y-1">
+        <div className="bg-white rounded-3xl shadow-lg overflow-hidden transition-transform duration-300 hover:shadow-xl hover:-translate-y-1">
             <div className="p-4">
                 <div className="flex justify-between items-start mb-2">
                     <div>

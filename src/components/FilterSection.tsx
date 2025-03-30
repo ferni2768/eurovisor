@@ -18,7 +18,7 @@ export default function FilterSection({
 }: FilterSectionProps) {
     return (
         <motion.div
-            className="bg-white rounded-lg shadow p-6 mb-8"
+            className="bg-white rounded-4xl shadow p-6 mb-8"
             layout
             transition={{
                 layout: { duration: 0.3, ease: "easeInOut" }

@@ -45,9 +45,9 @@ export default function FilterStatusMessage({
 
     return (
         <div
-            className={`mb-4 ${bgColor} border ${borderColor} rounded-md text-center transition-all duration-300 ease-in-out shadow-sm hover:shadow`}
+            className={`mb-4 ${bgColor}  rounded-3xl text-center transition-all duration-300 ease-in-out shadow-sm`}
             style={{
-                height: "50px",
+                height: "45px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center"
