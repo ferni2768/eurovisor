@@ -21,23 +21,23 @@ export default function FilterStatusMessage({
     if (selectedYear && selectedCountry) {
         const countryName = countryCodeToName[selectedCountry] || selectedCountry;
         message = `${countryName}'s entry in the ${selectedYear} Eurovision`;
-        bgColor = "bg-indigo-100";
+        bgColor = "bg-indigo-100/70";
         borderColor = "border-indigo-300";
         icon = "🎯";
     } else if (selectedYear) {
         message = `All entries from the ${selectedYear} Eurovision`;
-        bgColor = "bg-blue-100";
+        bgColor = "bg-blue-100/70";
         borderColor = "border-blue-300";
         icon = "📅";
     } else if (selectedCountry) {
         const countryName = countryCodeToName[selectedCountry] || selectedCountry;
         message = `All Eurovision entries from ${countryName}`;
-        bgColor = "bg-green-100";
+        bgColor = "bg-green-100/70";
         borderColor = "border-green-300";
         icon = "🌍";
     } else {
         message = "Eurovision Winners by Year";
-        bgColor = "bg-yellow-100";
+        bgColor = "bg-yellow-100/70";
         borderColor = "border-yellow-300";
         icon = "🏆";
     }
@@ -45,7 +45,7 @@ export default function FilterStatusMessage({
 
     return (
         <div
-            className={`mb-4 ${bgColor}  rounded-3xl text-center transition-all duration-300 ease-in-out shadow-sm`}
+            className={`mb-4 ${bgColor} rounded-t-3xl rounded-b-xl text-center transition-all duration-300 ease-in-out shadow-sm`}
             style={{
                 height: "45px",
                 display: "flex",

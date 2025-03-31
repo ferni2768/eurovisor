@@ -125,7 +125,7 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
                     <motion.button
                         id="country-filter"
                         onClick={() => setIsOpen(!isOpen)}
-                        className="w-full border border-gray-300 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-indigo-500 py-2 px-5 text-left flex items-center justify-between transition-all duration-200 cursor-pointer"
+                        className="w-full bg-white/75 border border-gray-300 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-indigo-500 py-2 px-5 text-left flex items-center justify-between transition-all duration-200 cursor-pointer"
                         layout
                         animate={{
                             borderRadius: isOpen ? "1.5rem 1.5rem 0 0" : "1.5rem",
@@ -312,7 +312,7 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
                                     onCountryChange(null);
                                     setIsOpen(false);
                                 }}
-                                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full w-[40px] h-full flex items-center justify-center"
+                                className="bg-white/60 hover:bg-white/100 cursor-pointer text-gray-800 font-bold py-2 px-4 rounded-full w-[40px] h-full flex items-center justify-center"
                                 aria-label="Clear country filter"
                                 style={{ minWidth: "40px" }}
                             >

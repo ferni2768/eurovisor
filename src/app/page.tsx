@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import FilterSection from "@/components/FilterSection";
 import FilterStatusMessage from "@/components/FilterStatusMessage";
 import ResultsList from "@/components/ResultsList";
+import BackgroundCanvas from "@/components/BackgroundCanvas";
 import { EntryResult, Contest } from "@/types/eurovision";
 import {
   fetchInitialData,
@@ -189,35 +190,38 @@ export default function Home() {
 
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <header className="mb-8 text-center">
-        <h1 className="text-4xl font-bold text-indigo-700">Eurovisor</h1>
-        <p className="text-gray-600">Explore Eurovision Song Contest performances</p>
-      </header>
+    <>
+      <BackgroundCanvas />
+      <div className="min-h-screen relative p-4">
+        <header className="mb-8 text-center">
+          <h1 className="text-4xl font-bold text-indigo-50">Eurovisor</h1>
+          <p className="text-gray-300">Explore Eurovision Song Contest performances</p>
+        </header>
 
-      <div className="max-w-6xl mx-auto">
-        <FilterSection
-          selectedYear={selectedYear}
-          selectedCountry={selectedCountry}
-          onYearChange={setSelectedYear}
-          onCountryChange={setSelectedCountry}
-        />
+        <div className="max-w-6xl mx-auto">
+          <FilterSection
+            selectedYear={selectedYear}
+            selectedCountry={selectedCountry}
+            onYearChange={setSelectedYear}
+            onCountryChange={setSelectedCountry}
+          />
 
-        <FilterStatusMessage
-          selectedYear={selectedYear}
-          selectedCountry={selectedCountry}
-          showingWinners={showingWinners}
-        />
+          <FilterStatusMessage
+            selectedYear={selectedYear}
+            selectedCountry={selectedCountry}
+            showingWinners={showingWinners}
+          />
 
-        <ResultsList
-          results={results}
-          loading={loading}
-          error={error}
-          selectedYear={selectedYear}
-          selectedCountry={selectedCountry}
-          showingWinners={showingWinners}
-        />
+          <ResultsList
+            results={results}
+            loading={loading}
+            error={error}
+            selectedYear={selectedYear}
+            selectedCountry={selectedCountry}
+            showingWinners={showingWinners}
+          />
+        </div>
       </div>
-    </div>
+    </>
   );
 }

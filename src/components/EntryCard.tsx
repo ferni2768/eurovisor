@@ -197,8 +197,9 @@ export default function EntryCard({
     // We show it if it's been in view at some point AND either it's currently visible OR it's already loaded
     const shouldShowVideoPlayer = isInView && (isCurrentlyVisible || videoLoaded);
 
+
     return (
-        <div className="bg-white rounded-3xl shadow-lg overflow-hidden transition-transform duration-300 hover:shadow-xl hover:-translate-y-1">
+        <div className="bg-white/70 rounded-3xl shadow-xl overflow-hidden transition-transform duration-300 hover:shadow-2xl hover:-translate-y-1 border-white/20 border-2">
             <div className="p-4">
                 <div className="flex justify-between items-start mb-2">
                     <div>
