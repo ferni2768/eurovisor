@@ -1,5 +1,43 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
+import 'overlayscrollbars/overlayscrollbars.css';
+
+// Custom CSS for the scrollbar
+const customScrollbarStyles = `
+  .os-scrollbar {
+    --os-size: 12px;
+    --os-padding-perpendicular: 2px;
+  }
+  
+  /* Additional styling for the scrollbar */
+  .os-scrollbar-handle {
+    border-radius: 10px;
+  }
+`;
+
+const variants = {
+    open: {
+        height: "auto",
+        borderRadius: "0 0 1.5rem 1.5rem",
+        transition: {
+            type: "spring",
+            stiffness: 350,
+            damping: 25,
+            mass: 0.75,
+        },
+    },
+    closed: {
+        height: 0,
+        borderRadius: "1.5rem",
+        transition: {
+            type: "tween",
+            duration: 0.15,
+            ease: "easeOut",
+        },
+    },
+};
 
 interface YearFilterProps {
     selectedYear: number | null;
@@ -13,8 +51,20 @@ const YearFilter: React.FC<YearFilterProps> = ({ selectedYear, onYearChange }) =
     // State for dropdown
     const [isOpen, setIsOpen] = useState(false);
 
-    // Close dropdown when clicking outside
+    // Ref for dropdown
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Apply custom scrollbar styles
+    useEffect(() => {
+        if (!document.getElementById('os-custom-styles')) {
+            const styleElement = document.createElement('style');
+            styleElement.id = 'os-custom-styles';
+            styleElement.textContent = customScrollbarStyles;
+            document.head.appendChild(styleElement);
+        }
+    }, []);
+
+    // Close dropdown when clicking outside
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -31,64 +81,113 @@ const YearFilter: React.FC<YearFilterProps> = ({ selectedYear, onYearChange }) =
             <label htmlFor="year-filter" className="block text-sm font-medium text-gray-700 mb-1">
                 Filter by Year
             </label>
-            <div className="flex gap-2">
-                <button
-                    id="year-filter"
-                    onClick={() => setIsOpen(!isOpen)}
-                    className="w-full rounded-md border border-gray-300 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-indigo-500 py-2 px-3 text-left flex items-center justify-between"
-                >
-                    {selectedYear ? (
-                        <span className="text-gray-500">{selectedYear}</span>
-                    ) : (
-                        <span className="text-gray-400">All Years</span>
-                    )}
-                    <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-                {selectedYear && (
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onYearChange(null);
-                            setIsOpen(false);
+            <div className="flex items-center">
+                <div className="relative flex-grow">
+                    <motion.button
+                        id="year-filter"
+                        onClick={() => setIsOpen(!isOpen)}
+                        className="bg-white/75 w-full border border-gray-300 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-indigo-500 py-2 px-5 text-left flex items-center justify-between transition-all duration-200 cursor-pointer"
+                        layout
+                        animate={{
+                            borderRadius: isOpen ? "1.5rem 1.5rem 0 0" : "1.5rem",
                         }}
-                        className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded"
-                        aria-label="Clear year filter"
+                        transition={{
+                            borderRadius: {
+                                duration: 0.2,
+                                ease: "easeInOut"
+                            }
+                        }}
                     >
-                        ✕
-                    </button>
-                )}
-            </div>
-
-            <div className="w-full relative">
-                {isOpen && (
-                    <div className="absolute z-10 mt-1 w-full max-h-72 bg-white border border-gray-300 rounded-md shadow-lg overflow-y-auto">
-                        {/* Option for "All Years" */}
-                        <div
-                            onClick={() => {
-                                onYearChange(null);
-                                setIsOpen(false);
-                            }}
-                            className="cursor-pointer hover:bg-gray-100 py-2 px-3 flex items-center justify-between"
-                        >
+                        {selectedYear ? (
+                            <span className="text-gray-500">{selectedYear}</span>
+                        ) : (
                             <span className="text-gray-400">All Years</span>
-                        </div>
-                        {/* Options for each year */}
-                        {years.map((year) => (
-                            <div
-                                key={year}
-                                onClick={() => {
-                                    onYearChange(year);
+                        )}
+                        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </motion.button>
+                    <AnimatePresence>
+                        {isOpen && (
+                            <motion.div
+                                variants={variants}
+                                initial="closed"
+                                animate="open"
+                                exit="closed"
+                                className="absolute z-10 w-full bg-white border border-gray-300 shadow-lg overflow-hidden"
+                                style={{ borderTop: "none" }}
+                            >
+                                <OverlayScrollbarsComponent
+                                    options={{
+                                        scrollbars: {
+                                            theme: "os-theme-dark",
+                                            autoHide: "scroll",
+                                            autoHideDelay: 400,
+                                            dragScroll: true,
+                                            clickScroll: true,
+                                        },
+                                        overflow: {
+                                            x: "hidden",
+                                            y: "scroll",
+                                        },
+                                    }}
+                                    className="max-h-72 pt-2 pb-2 pl-2 pr-3"
+                                >
+                                    {/* Option for "All Years" */}
+                                    <div
+                                        onClick={() => {
+                                            onYearChange(null);
+                                            setIsOpen(false);
+                                        }}
+                                        className="cursor-pointer hover:bg-gray-100 rounded-2xl py-2 px-3 flex items-center justify-between"
+                                    >
+                                        <span className="text-gray-400">All Years</span>
+                                    </div>
+                                    {/* Options for each year */}
+                                    {years.map((year) => (
+                                        <div
+                                            key={year}
+                                            onClick={() => {
+                                                onYearChange(year);
+                                                setIsOpen(false);
+                                            }}
+                                            className="cursor-pointer hover:bg-gray-100 rounded-2xl py-2 px-3 flex items-center"
+                                        >
+                                            <span className="text-gray-500">{year}</span>
+                                        </div>
+                                    ))}
+                                </OverlayScrollbarsComponent>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+                <AnimatePresence>
+                    {selectedYear && (
+                        <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: "40px" }}
+                            exit={{ width: 0 }}
+                            transition={{
+                                duration: 0.3,
+                                ease: "easeInOut"
+                            }}
+                            className="ml-2 overflow-hidden"
+                        >
+                            <motion.button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onYearChange(null);
                                     setIsOpen(false);
                                 }}
-                                className="cursor-pointer hover:bg-gray-100 py-2 px-3 flex items-center"
+                                className="bg-white/60 hover:bg-white/100 cursor-pointer text-gray-800 font-bold py-2 px-4 rounded-full w-[40px] h-full flex items-center justify-center"
+                                aria-label="Clear year filter"
+                                style={{ minWidth: "40px" }}
                             >
-                                <span className="text-gray-500">{year}</span>
-                            </div>
-                        ))}
-                    </div>
-                )}
+                                ✕
+                            </motion.button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     );
