@@ -10,9 +10,10 @@ export const fetchWinners = async (
         setError: (error: string | null) => void;
         setShowingWinners: (showing: boolean) => void;
         setResults: (results: EntryResult[]) => void;
+        signal?: AbortSignal;
     }
 ) => {
-    const { setLoading, setError, setShowingWinners, setResults } = callbacks;
+    const { setLoading, setError, setShowingWinners, setResults, signal } = callbacks;
 
     setLoading(true);
     setError(null);
@@ -29,7 +30,7 @@ export const fetchWinners = async (
         for (let i = 0; i < sortedContests.length; i += batchSize) {
             const batch = sortedContests.slice(i, i + batchSize);
             const batchPromises = batch.map(contest =>
-                getContestByYear(contest.year)
+                getContestByYear(contest.year, { signal })
                     .then(contestData => {
                         if (!contestData || !contestData.rounds) {
                             console.log(`No contest data or rounds for year ${contest.year}`);
@@ -110,9 +111,10 @@ export const fetchCountryEntries = async (
         setLoading: (loading: boolean) => void;
         setError: (error: string | null) => void;
         setResults: (results: EntryResult[]) => void;
+        signal?: AbortSignal;
     }
 ) => {
-    const { setLoading, setError, setResults } = callbacks;
+    const { setLoading, setError, setResults, signal } = callbacks;
 
     setLoading(true);
     setError(null);
@@ -128,7 +130,7 @@ export const fetchCountryEntries = async (
         for (let i = 0; i < sortedContests.length; i += batchSize) {
             const batch = sortedContests.slice(i, i + batchSize);
             const batchPromises = batch.map(contest =>
-                getContestByYear(contest.year)
+                getContestByYear(contest.year, { signal })
                     .then(contestData => {
                         if (!contestData || !contestData.contestants) return null;
 
@@ -203,15 +205,16 @@ export const fetchYearEntries = async (
         setError: (error: string | null) => void;
         setResults: (results: EntryResult[]) => void;
         setCurrentContest: (contest: Contest | null) => void;
+        signal?: AbortSignal;
     }
 ) => {
-    const { setLoading, setError, setResults, setCurrentContest } = callbacks;
+    const { setLoading, setError, setResults, setCurrentContest, signal } = callbacks;
 
     setLoading(true);
     setError(null);
 
     try {
-        const contestData = await getContestByYear(year);
+        const contestData = await getContestByYear(year, { signal });
         if (!contestData || !contestData.contestants) {
             setResults([]);
             setError(`No data available for Eurovision ${year}`);
@@ -323,15 +326,16 @@ export const fetchCountryInYear = async (
         setError: (error: string | null) => void;
         setResults: (results: EntryResult[]) => void;
         setCurrentContest: (contest: Contest | null) => void;
+        signal?: AbortSignal;
     }
 ) => {
-    const { setLoading, setError, setResults, setCurrentContest } = callbacks;
+    const { setLoading, setError, setResults, setCurrentContest, signal } = callbacks;
 
     setLoading(true);
     setError(null);
 
     try {
-        const contestData = await getContestByYear(year);
+        const contestData = await getContestByYear(year, { signal });
         if (!contestData || !contestData.contestants) {
             setResults([]);
             setError(`No data available for Eurovision ${year}`);
@@ -415,9 +419,10 @@ export const fetchInitialData = async (
         setCountryNames: (countries: Record<string, string>) => void;
         setContests: (contests: any[]) => void;
         setInitialDataLoaded: (loaded: boolean) => void;
+        signal?: AbortSignal;
     }
 ) => {
-    const { setLoading, setError, setCountryNames, setContests, setInitialDataLoaded } = callbacks;
+    const { setLoading, setError, setCountryNames, setContests, setInitialDataLoaded, signal } = callbacks;
 
     setLoading(true);
     setError(null);
@@ -425,8 +430,8 @@ export const fetchInitialData = async (
     try {
         // Fetch country names and contests in parallel
         const [countriesData, contestsData] = await Promise.all([
-            getCountries(),
-            getContests()
+            getCountries({ signal }),
+            getContests({ signal })
         ]);
 
         setCountryNames(countriesData);
