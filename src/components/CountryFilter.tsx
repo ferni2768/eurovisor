@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Flag from "react-world-flags";
 import { getCountries } from "@/services/eurovisionService";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
 import "overlayscrollbars/overlayscrollbars.css";
 
@@ -21,21 +21,29 @@ const customScrollbarStyles = `
 const variants = {
     open: {
         height: "auto",
+        opacity: 1,
         borderRadius: "0 0 1.5rem 1.5rem",
         transition: {
-            type: "spring",
-            stiffness: 350,
-            damping: 25,
-            mass: 0.75,
+            height: {
+                type: "spring",
+                stiffness: 350,
+                damping: 25,
+                mass: 0.75,
+            },
+            opacity: { duration: 0 },
         },
     },
     closed: {
         height: 0,
+        opacity: 0,
         borderRadius: "1.5rem",
         transition: {
-            type: "tween",
-            duration: 0.15,
-            ease: "easeOut",
+            height: {
+                type: "tween",
+                duration: 0.15,
+                ease: "easeOut",
+            },
+            opacity: { duration: 0, delay: 0.15 },
         },
     },
 };
@@ -54,7 +62,7 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Fetch countries from API
+    // Fetch countries from API only once
     useEffect(() => {
         const fetchCountries = async () => {
             try {
@@ -85,10 +93,7 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
     const dropdownRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
-            if (
-                dropdownRef.current &&
-                !dropdownRef.current.contains(event.target as Node)
-            ) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setIsOpen(false);
             }
         }
@@ -131,10 +136,7 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
                             borderRadius: isOpen ? "1.5rem 1.5rem 0 0" : "1.5rem",
                         }}
                         transition={{
-                            borderRadius: {
-                                duration: 0.2,
-                                ease: "easeInOut"
-                            }
+                            borderRadius: { duration: 0.2, ease: "easeInOut" },
                         }}
                         disabled={loading}
                     >
@@ -181,146 +183,140 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
                             />
                         </svg>
                     </motion.button>
-                    <AnimatePresence>
-                        {isOpen && (
-                            <motion.div
-                                variants={variants}
-                                initial="closed"
-                                animate="open"
-                                exit="closed"
-                                className="absolute z-10 w-full bg-white border border-gray-300 shadow-lg overflow-hidden"
-                                style={{ borderTop: "none" }}
-                            >
-                                <OverlayScrollbarsComponent
-                                    options={{
-                                        scrollbars: {
-                                            theme: "os-theme-dark",
-                                            autoHide: "scroll",
-                                            autoHideDelay: 400,
-                                            dragScroll: true,
-                                            clickScroll: true,
-                                        },
-                                        overflow: {
-                                            x: "hidden",
-                                            y: "scroll",
-                                        },
-                                    }}
-                                    className="max-h-72 pt-2 pb-2 pl-2 pr-3"
-                                >
-                                    {/* Option for "All Countries" */}
-                                    <div
-                                        onClick={() => {
-                                            onCountryChange(null);
-                                            setIsOpen(false);
-                                        }}
-                                        className="cursor-pointer hover:bg-gray-100 rounded-2xl py-2 px-3 flex items-center justify-between"
-                                    >
-                                        <span className="text-gray-400">All Countries</span>
-                                    </div>
-
-                                    {/* Loading indicator */}
-                                    {loading && (
-                                        <div className="py-4 text-center text-gray-500">
-                                            <svg
-                                                className="animate-spin h-5 w-5 mx-auto mb-2"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <circle
-                                                    className="opacity-25"
-                                                    cx="12"
-                                                    cy="12"
-                                                    r="10"
-                                                    stroke="currentColor"
-                                                    strokeWidth="4"
-                                                ></circle>
-                                                <path
-                                                    className="opacity-75"
-                                                    fill="currentColor"
-                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                                ></path>
-                                            </svg>
-                                            Loading countries...
-                                        </div>
-                                    )}
-
-                                    {/* Error message */}
-                                    {error && (
-                                        <div className="py-4 text-center text-red-500">{error}</div>
-                                    )}
-
-                                    {/* Options for each country */}
-                                    {!loading &&
-                                        !error &&
-                                        sortedCountries.map((country) => (
-                                            <div
-                                                key={country.code}
-                                                onClick={() => {
-                                                    onCountryChange(country.code);
-                                                    setIsOpen(false);
-                                                }}
-                                                className="cursor-pointer hover:bg-gray-100 rounded-2xl py-2 px-3 flex items-center"
-                                            >
-                                                {country.code === "YU" ? (
-                                                    <div className="flex">
-                                                        <Flag
-                                                            code="RS"
-                                                            style={{
-                                                                height: "1.5em",
-                                                                width: "2em",
-                                                                marginRight: "2px",
-                                                            }}
-                                                            className="rounded inline-block"
-                                                        />
-                                                        <Flag
-                                                            code="ME"
-                                                            style={{ height: "1.5em", width: "2em" }}
-                                                            className="rounded inline-block"
-                                                        />
-                                                    </div>
-                                                ) : (
-                                                    <Flag
-                                                        code={country.code}
-                                                        style={{ height: "1.5em", width: "2em" }}
-                                                        className="rounded inline-block"
-                                                    />
-                                                )}
-                                                <span className="ml-2 text-gray-500">{country.name}</span>
-                                            </div>
-                                        ))}
-                                </OverlayScrollbarsComponent>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
-                <AnimatePresence>
-                    {selectedCountry && (
-                        <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: "40px" }}
-                            exit={{ width: 0 }}
-                            transition={{
-                                duration: 0.3,
-                                ease: "easeInOut"
+                    {/* Dropdown container */}
+                    <motion.div
+                        variants={variants}
+                        animate={isOpen ? "open" : "closed"}
+                        initial="closed"
+                        className="absolute z-10 w-full bg-white border border-gray-300 shadow-lg overflow-hidden"
+                        style={{ borderTop: "none" }}
+                    >
+                        <OverlayScrollbarsComponent
+                            options={{
+                                scrollbars: {
+                                    theme: "os-theme-dark",
+                                    autoHide: "scroll",
+                                    autoHideDelay: 400,
+                                    dragScroll: true,
+                                    clickScroll: true,
+                                },
+                                overflow: {
+                                    x: "hidden",
+                                    y: "scroll",
+                                },
                             }}
-                            className="ml-2 overflow-hidden"
+                            className="max-h-72 pt-2 pb-2 pl-2 pr-3"
                         >
-                            <motion.button
-                                onClick={(e) => {
-                                    e.stopPropagation();
+                            {/* Option for "All Countries" */}
+                            <div
+                                onClick={() => {
                                     onCountryChange(null);
                                     setIsOpen(false);
                                 }}
-                                className="bg-white/60 hover:bg-white/100 cursor-pointer text-gray-800 font-bold py-2 px-4 rounded-full w-[40px] h-full flex items-center justify-center"
-                                aria-label="Clear country filter"
-                                style={{ minWidth: "40px" }}
+                                className="cursor-pointer hover:bg-gray-100 rounded-2xl py-2 px-3 flex items-center justify-between"
                             >
-                                ✕
-                            </motion.button>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                                <span className="text-gray-400">All Countries</span>
+                            </div>
+
+                            {/* Loading indicator */}
+                            {loading && (
+                                <div className="py-4 text-center text-gray-500">
+                                    <svg
+                                        className="animate-spin h-5 w-5 mx-auto mb-2"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            className="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            strokeWidth="4"
+                                        ></circle>
+                                        <path
+                                            className="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        ></path>
+                                    </svg>
+                                    Loading countries...
+                                </div>
+                            )}
+
+                            {/* Error message */}
+                            {error && (
+                                <div className="py-4 text-center text-red-500">{error}</div>
+                            )}
+
+                            {/* Options for each country */}
+                            {!loading &&
+                                !error &&
+                                sortedCountries.map((country) => (
+                                    <div
+                                        key={country.code}
+                                        onClick={() => {
+                                            onCountryChange(country.code);
+                                            setIsOpen(false);
+                                        }}
+                                        className="cursor-pointer hover:bg-gray-100 rounded-2xl py-2 px-3 flex items-center"
+                                    >
+                                        {country.code === "YU" ? (
+                                            <div className="flex">
+                                                <Flag
+                                                    code="RS"
+                                                    style={{
+                                                        height: "1.5em",
+                                                        width: "2em",
+                                                        marginRight: "2px",
+                                                    }}
+                                                    className="rounded inline-block"
+                                                />
+                                                <Flag
+                                                    code="ME"
+                                                    style={{ height: "1.5em", width: "2em" }}
+                                                    className="rounded inline-block"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <Flag
+                                                code={country.code}
+                                                style={{ height: "1.5em", width: "2em" }}
+                                                className="rounded inline-block"
+                                            />
+                                        )}
+                                        <span className="ml-2 text-gray-500">{country.name}</span>
+                                    </div>
+                                ))}
+                        </OverlayScrollbarsComponent>
+                    </motion.div>
+                </div>
+                {selectedCountry && (
+                    <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: "40px" }}
+                        exit={{ width: 0 }}
+                        transition={{
+                            duration: 0.3,
+                            ease: "easeInOut",
+                        }}
+                        className="ml-2 overflow-hidden"
+                    >
+                        <motion.button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onCountryChange(null);
+                                setIsOpen(false);
+                            }}
+                            className="bg-white/60 hover:bg-white/100 cursor-pointer text-gray-800 font-bold py-2 px-4 rounded-full w-[40px] h-full flex items-center justify-center"
+                            aria-label="Clear country filter"
+                            style={{ minWidth: "40px" }}
+                        >
+                            ✕
+                        </motion.button>
+                    </motion.div>
+                )}
             </div>
         </div>
     );
