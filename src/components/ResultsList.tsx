@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import EntryCard from "./EntryCard";
 import { EntryResult } from "@/types/eurovision";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 
 interface ResultsListProps {
@@ -32,8 +32,8 @@ interface CustomAnimationProps {
 const LazyCard: React.FC<LazyCardProps> = ({ result, index, numberOfColumns, initialRowCount }) => {
     const [ref, inView] = useInView({
         triggerOnce: true,
-        rootMargin: '0px',
-        threshold: 0.1
+        rootMargin: "0px",
+        threshold: 0.1,
     });
 
     // Calculate row index for delay cascade
@@ -56,21 +56,24 @@ const LazyCard: React.FC<LazyCardProps> = ({ result, index, numberOfColumns, ini
         exitScale: initialScale,
     };
 
+    // Use reduced motion if requested (e.g. slower devices)
+    const shouldReduceMotion = useReducedMotion();
+
     const cardVariants = {
         hidden: (custom: CustomAnimationProps) => ({
             opacity: 0,
             scale: custom.initialScale,
             y: custom.initialY,
-            filter: `blur(${custom.initialBlur}px)`,
+            filter: shouldReduceMotion ? "none" : `blur(${custom.initialBlur}px)`,
         }),
         visible: (custom: CustomAnimationProps) => ({
             opacity: 1,
             scale: 1,
             y: 0,
-            filter: "blur(0px)",
+            filter: "none",
             transition: {
                 delay: custom.delay,
-                duration: 0.4 + Math.random() * 0.2,
+                duration: shouldReduceMotion ? 0.3 : 0.4 + Math.random() * 0.2,
                 ease: "easeOut",
             },
         }),
@@ -78,13 +81,16 @@ const LazyCard: React.FC<LazyCardProps> = ({ result, index, numberOfColumns, ini
             opacity: 0,
             scale: custom.exitScale,
             y: -custom.initialY,
-            filter: `blur(${custom.initialBlur}px)`,
+            filter: shouldReduceMotion ? "none" : `blur(${custom.initialBlur}px)`,
             transition: {
-                duration: 0.3 + Math.random() * 0.2,
+                duration: shouldReduceMotion ? 0.2 : 0.3 + Math.random() * 0.2,
                 ease: "easeIn",
             },
         }),
     };
+
+    // Memoize the EntryCard so that it doesn’t re-render unnecessarily
+    const EntryCardMemo = React.memo(EntryCard);
 
     return (
         // Reserve the expected space with a fixed min-height
@@ -97,18 +103,9 @@ const LazyCard: React.FC<LazyCardProps> = ({ result, index, numberOfColumns, ini
                     initial="hidden"
                     animate="visible"
                     exit="exit"
+                    style={{ willChange: "transform, opacity" }}
                 >
-                    <EntryCard
-                        year={result.year}
-                        contestantId={result.contestantId}
-                        country={result.country}
-                        countryName={result.countryName}
-                        artist={result.artist}
-                        song={result.song}
-                        place={result.place}
-                        isWinner={result.isWinner}
-                        didQualify={result.didQualify}
-                    />
+                    <EntryCardMemo {...result} />
                 </motion.div>
             ) : (
                 // Placeholder div to reserve space before the card loads
@@ -137,7 +134,7 @@ const ResultsList: React.FC<ResultsListProps> = ({
     const [isExiting, setIsExiting] = useState(false);
 
     // Generate a unique key for the results list based on filters
-    const resultsKey = `${selectedYear || 'all'}-${selectedCountry || 'all'}-${showingWinners ? 'winners' : 'all'}`;
+    const resultsKey = `${selectedYear || "all"}-${selectedCountry || "all"}-${showingWinners ? "winners" : "all"}`;
 
     // Calculate the total height of the results list
     const calculateTotalHeight = (resultsList: EntryResult[]) => {
@@ -164,8 +161,8 @@ const ResultsList: React.FC<ResultsListProps> = ({
         };
 
         updateColumnCount();
-        window.addEventListener('resize', updateColumnCount);
-        return () => window.removeEventListener('resize', updateColumnCount);
+        window.addEventListener("resize", updateColumnCount);
+        return () => window.removeEventListener("resize", updateColumnCount);
     }, []);
 
     // Estimate initially visible rows based on window height
@@ -175,22 +172,18 @@ const ResultsList: React.FC<ResultsListProps> = ({
         setInitialRowCount(visibleRows);
     }, []);
 
-    // Handle changes to filters - this triggers exit animations
+    // Handle changes to filters - trigger exit animations
     useEffect(() => {
-        // If we have visible results and filters change, trigger exit animations
         if (visibleResults.length > 0) {
             setIsExiting(true);
         }
     }, [selectedYear, selectedCountry, showingWinners]);
 
-    // Handle changes to results or loading state
+    // Update visible results when not in exiting state
     useEffect(() => {
-        // If we're not in exiting state and have results, update visible results
         if (!isExiting && results.length > 0 && !loading) {
             setVisibleResults(results);
-        }
-        // If we're not exiting and have no results but are not loading, clear visible results
-        else if (!isExiting && results.length === 0 && !loading) {
+        } else if (!isExiting && results.length === 0 && !loading) {
             setVisibleResults([]);
         }
     }, [results, loading, isExiting]);
@@ -202,13 +195,10 @@ const ResultsList: React.FC<ResultsListProps> = ({
         setVisibleResults(loading ? [] : results);
     };
 
-    // Initial loading state - no results yet and loading
+    // Initial loading state
     if (visibleResults.length === 0 && loading && !isExiting) {
         return (
-            <div
-                className="relative"
-                style={{ height: "300px" }}
-            >
+            <div className="relative" style={{ height: "300px" }}>
                 <div className="absolute top-1/2 mt-10 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                     <svg
                         className="animate-spin h-10 w-10 text-indigo-500"
@@ -258,10 +248,7 @@ const ResultsList: React.FC<ResultsListProps> = ({
 
     return (
         <div className="mb-16 relative backdrop-blur-xl">
-            <AnimatePresence
-                mode="wait"
-                onExitComplete={handleExitComplete}
-            >
+            <AnimatePresence mode="wait" onExitComplete={handleExitComplete}>
                 <div
                     key={isExiting ? "exiting-" + resultsKey : resultsKey}
                     ref={containerRef}

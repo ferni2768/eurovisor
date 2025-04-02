@@ -15,67 +15,78 @@ interface EntryCardProps {
     didQualify?: boolean;
 }
 
-// Create a memoized video component to prevent re-renders
-const VideoPlayer = memo(({ videoUrl, title, onLoad, isVisible }: {
-    videoUrl: string;
-    title: string;
-    onLoad?: () => void;
-    isVisible: boolean;
-}) => {
-    const [loaded, setLoaded] = useState(false);
-    const iframeRef = useRef<HTMLIFrameElement>(null);
+// Memoized VideoPlayer component to prevent unnecessary re-renders
+const VideoPlayer = memo(
+    ({
+        videoUrl,
+        title,
+        onLoad,
+        isVisible,
+    }: {
+        videoUrl: string;
+        title: string;
+        onLoad?: () => void;
+        isVisible: boolean;
+    }) => {
+        const [loaded, setLoaded] = useState(false);
+        const iframeRef = useRef<HTMLIFrameElement>(null);
 
-    // Extract YouTube video ID
-    const getYoutubeIdFromUrl = (url: string): string | null => {
-        const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/;
-        const match = url.match(regex);
-        return match ? match[1] : null;
-    };
+        // Extract YouTube video ID
+        const getYoutubeIdFromUrl = (url: string): string | null => {
+            const regex =
+                /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/;
+            const match = url.match(regex);
+            return match ? match[1] : null;
+        };
 
-    const videoId = getYoutubeIdFromUrl(videoUrl);
+        const videoId = getYoutubeIdFromUrl(videoUrl);
 
-    // Construct proper embed URL
-    let embedUrl = videoUrl;
-    if (videoId) {
-        const origin = typeof window !== 'undefined' ? window.location.origin : '';
-        embedUrl = `https://www.youtube.com/embed/${videoId}?origin=${encodeURIComponent(origin)}`;
-    }
-
-    const handleLoad = useCallback(() => {
-        setLoaded(true);
-        if (onLoad) onLoad();
-    }, [onLoad]);
-
-    // Control iframe src based on visibility
-    useEffect(() => {
-        if (!iframeRef.current) return;
-        if (isVisible) {
-            // Only set src if it's not already set (to avoid reloading)
-            if (!iframeRef.current.src) {
-                iframeRef.current.src = embedUrl;
-            }
-        } else if (!loaded) {
-            // Only remove src if not already loaded (to keep loaded videos in memory)
-            iframeRef.current.src = '';
+        // Construct proper embed URL
+        let embedUrl = videoUrl;
+        if (videoId) {
+            const origin =
+                typeof window !== "undefined" ? window.location.origin : "";
+            embedUrl = `https://www.youtube.com/embed/${videoId}?origin=${encodeURIComponent(
+                origin
+            )}`;
         }
-    }, [isVisible, embedUrl, loaded]);
 
-    return (
-        <iframe
-            ref={iframeRef}
-            title={title}
-            frameBorder="0"
-            referrerPolicy="origin"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className={`absolute top-0 left-0 w-full h-full rounded-xl transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-            onLoad={handleLoad}
-            loading="lazy"
-        />
-    );
-});
+        const handleLoad = useCallback(() => {
+            setLoaded(true);
+            if (onLoad) onLoad();
+        }, [onLoad]);
 
-VideoPlayer.displayName = 'VideoPlayer';
+        // Control iframe src based on visibility
+        useEffect(() => {
+            if (!iframeRef.current) return;
+            if (isVisible) {
+                // Only set src if it's not already set (to avoid reloading)
+                if (!iframeRef.current.src) {
+                    iframeRef.current.src = embedUrl;
+                }
+            } else if (!loaded) {
+                // Remove src if not already loaded
+                iframeRef.current.src = "";
+            }
+        }, [isVisible, embedUrl, loaded]);
+
+        return (
+            <iframe
+                ref={iframeRef}
+                title={title}
+                frameBorder="0"
+                referrerPolicy="origin"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className={`absolute top-0 left-0 w-full h-full rounded-xl transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"
+                    }`}
+                onLoad={handleLoad}
+                loading="lazy"
+            />
+        );
+    }
+);
+VideoPlayer.displayName = "VideoPlayer";
 
 export default function EntryCard({
     year,
@@ -86,7 +97,7 @@ export default function EntryCard({
     countryName,
     place,
     isWinner,
-    didQualify
+    didQualify,
 }: EntryCardProps) {
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
@@ -97,9 +108,10 @@ export default function EntryCard({
     const videoContainerRef = useRef<HTMLDivElement>(null);
     const videoDataFetched = useRef(false);
 
-    // Extract YouTube video ID
+    // Extract YouTube video ID helper
     const getYoutubeIdFromUrl = (url: string): string | null => {
-        const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/;
+        const regex =
+            /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/;
         const match = url.match(regex);
         return match ? match[1] : null;
     };
@@ -108,7 +120,6 @@ export default function EntryCard({
     useEffect(() => {
         const fetchDetails = async () => {
             if (videoDataFetched.current) return;
-
             try {
                 setLoading(true);
                 const details = await getContestantDetails(year, contestantId);
@@ -127,40 +138,40 @@ export default function EntryCard({
         fetchDetails();
     }, [year, contestantId]);
 
-    // Intersection Observer to track when the card enters and exits the viewport
+    // Intersection Observer to track when the card enters/exits the viewport
     useEffect(() => {
         if (!videoContainerRef.current) return;
 
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
-                    // Track current visibility
-                    setIsCurrentlyVisible(entry.isIntersecting);
-
-                    // Once it's been in view, mark it as having been seen
-                    if (entry.isIntersecting) {
+                    // Once seen, mark it as loaded (persist even if later off-screen)
+                    if (entry.isIntersecting && !isInView) {
                         setIsInView(true);
                     }
+                    setIsCurrentlyVisible(entry.isIntersecting);
                 });
             },
             {
-                threshold: 0.1,  // Trigger when 10% of the element is visible
-                rootMargin: "100px 0px" // Start loading 100px before it comes into view
+                threshold: 0.1,
+                rootMargin: "100px 0px",
             }
         );
 
         observer.observe(videoContainerRef.current);
         return () => observer.disconnect();
-    }, []);
+    }, [isInView]);
 
     const videoId = videoUrl ? getYoutubeIdFromUrl(videoUrl) : null;
-    const thumbnailUrl = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
+    const thumbnailUrl = videoId
+        ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+        : null;
 
     const handleVideoLoad = useCallback(() => {
         setVideoLoaded(true);
     }, []);
 
-    // Determine which badge to show
+    // Render badge based on contest details
     const renderBadge = () => {
         if (year === 2020) {
             return (
@@ -193,8 +204,8 @@ export default function EntryCard({
         return null;
     };
 
-    // Determine if we should show the video player
-    // We show it if it's been in view at some point AND either it's currently visible OR it's already loaded
+    // Determine if we should show the video player:
+    // Only show if the element has been seen and is either currently visible or already loaded.
     const shouldShowVideoPlayer = isInView && (isCurrentlyVisible || videoLoaded);
 
 
@@ -256,7 +267,7 @@ export default function EntryCard({
                 <div
                     ref={videoContainerRef}
                     className="relative w-full mb-4"
-                    style={{ paddingTop: '56.25%' }} // 16:9 aspect ratio
+                    style={{ paddingTop: "56.25%" }} // 16:9 aspect ratio
                 >
                     {videoUrl && !loading && !error ? (
                         <>
