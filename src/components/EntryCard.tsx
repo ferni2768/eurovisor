@@ -1,7 +1,10 @@
 "use client";
-import { useState, useEffect, useRef, useCallback, memo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getContestantDetails } from "@/services/eurovisionService";
 import Flag from "react-world-flags";
+import LiteYouTubeEmbed from "react-lite-youtube-embed";
+import "react-lite-youtube-embed/dist/LiteYouTubeEmbed.css";
+import '@/styles/customPlayButton.css';
 
 interface EntryCardProps {
     year: number;
@@ -15,79 +18,6 @@ interface EntryCardProps {
     didQualify?: boolean;
 }
 
-// Memoized VideoPlayer component to prevent unnecessary re-renders
-const VideoPlayer = memo(
-    ({
-        videoUrl,
-        title,
-        onLoad,
-        isVisible,
-    }: {
-        videoUrl: string;
-        title: string;
-        onLoad?: () => void;
-        isVisible: boolean;
-    }) => {
-        const [loaded, setLoaded] = useState(false);
-        const iframeRef = useRef<HTMLIFrameElement>(null);
-
-        // Extract YouTube video ID
-        const getYoutubeIdFromUrl = (url: string): string | null => {
-            const regex =
-                /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/;
-            const match = url.match(regex);
-            return match ? match[1] : null;
-        };
-
-        const videoId = getYoutubeIdFromUrl(videoUrl);
-
-        // Construct proper embed URL
-        let embedUrl = videoUrl;
-        if (videoId) {
-            const origin =
-                typeof window !== "undefined" ? window.location.origin : "";
-            embedUrl = `https://www.youtube.com/embed/${videoId}?origin=${encodeURIComponent(
-                origin
-            )}`;
-        }
-
-        const handleLoad = useCallback(() => {
-            setLoaded(true);
-            if (onLoad) onLoad();
-        }, [onLoad]);
-
-        // Control iframe src based on visibility
-        useEffect(() => {
-            if (!iframeRef.current) return;
-            if (isVisible) {
-                // Only set src if it's not already set (to avoid reloading)
-                if (!iframeRef.current.src) {
-                    iframeRef.current.src = embedUrl;
-                }
-            } else if (!loaded) {
-                // Remove src if not already loaded
-                iframeRef.current.src = "";
-            }
-        }, [isVisible, embedUrl, loaded]);
-
-        return (
-            <iframe
-                ref={iframeRef}
-                title={title}
-                frameBorder="0"
-                referrerPolicy="origin"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className={`absolute top-0 left-0 w-full h-full rounded-xl transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"
-                    }`}
-                onLoad={handleLoad}
-                loading="lazy"
-            />
-        );
-    }
-);
-VideoPlayer.displayName = "VideoPlayer";
-
 export default function EntryCard({
     year,
     contestantId,
@@ -99,21 +29,26 @@ export default function EntryCard({
     isWinner,
     didQualify,
 }: EntryCardProps) {
-    const [videoUrl, setVideoUrl] = useState<string | null>(null);
-    const [loading, setLoading] = useState<boolean>(false);
+    const [videoId, setVideoId] = useState<string | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-    const [isInView, setIsInView] = useState(false);
-    const [isCurrentlyVisible, setIsCurrentlyVisible] = useState(false);
-    const [videoLoaded, setVideoLoaded] = useState(false);
-    const videoContainerRef = useRef<HTMLDivElement>(null);
     const videoDataFetched = useRef(false);
 
-    // Extract YouTube video ID helper
+    // Improved YouTube video ID extraction function
     const getYoutubeIdFromUrl = (url: string): string | null => {
-        const regex =
-            /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{11})/;
+        // This comprehensive regex handles all YouTube URL formats including youtube-nocookie.com
+        const regex = /(?:youtube(?:-nocookie)?\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
         const match = url.match(regex);
-        return match ? match[1] : null;
+
+        if (match && match[1]) {
+            return match[1];
+        }
+
+        // Fallback for direct embed URLs
+        const embedRegex = /(?:youtube(?:-nocookie)?\.com\/embed\/)([a-zA-Z0-9_-]{11})/;
+        const embedMatch = url.match(embedRegex);
+
+        return embedMatch ? embedMatch[1] : null;
     };
 
     // Fetch video details only once
@@ -123,13 +58,24 @@ export default function EntryCard({
             try {
                 setLoading(true);
                 const details = await getContestantDetails(year, contestantId);
+
                 if (details.videoUrls && details.videoUrls.length > 0) {
-                    setVideoUrl(details.videoUrls[0]);
-                    videoDataFetched.current = true;
+                    const videoUrl = details.videoUrls[0];
+
+                    const extractedId = getYoutubeIdFromUrl(videoUrl);
+
+                    if (extractedId) {
+                        setVideoId(extractedId);
+                        videoDataFetched.current = true;
+                    } else {
+                        setError(`Could not extract video ID from URL: ${videoUrl}`);
+                    }
+                } else {
+                    setError("No video URL available for this entry");
                 }
             } catch (err) {
-                setError("Failed to load video");
-                console.error(err);
+                console.error("Error fetching video details:", err);
+                setError("Failed to load video details");
             } finally {
                 setLoading(false);
             }
@@ -137,39 +83,6 @@ export default function EntryCard({
 
         fetchDetails();
     }, [year, contestantId]);
-
-    // Intersection Observer to track when the card enters/exits the viewport
-    useEffect(() => {
-        if (!videoContainerRef.current) return;
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    // Once seen, mark it as loaded (persist even if later off-screen)
-                    if (entry.isIntersecting && !isInView) {
-                        setIsInView(true);
-                    }
-                    setIsCurrentlyVisible(entry.isIntersecting);
-                });
-            },
-            {
-                threshold: 0.1,
-                rootMargin: "100px 0px",
-            }
-        );
-
-        observer.observe(videoContainerRef.current);
-        return () => observer.disconnect();
-    }, [isInView]);
-
-    const videoId = videoUrl ? getYoutubeIdFromUrl(videoUrl) : null;
-    const thumbnailUrl = videoId
-        ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
-        : null;
-
-    const handleVideoLoad = useCallback(() => {
-        setVideoLoaded(true);
-    }, []);
 
     // Render badge based on contest details
     const renderBadge = () => {
@@ -204,9 +117,42 @@ export default function EntryCard({
         return null;
     };
 
-    // Determine if we should show the video player:
-    // Only show if the element has been seen and is either currently visible or already loaded.
-    const shouldShowVideoPlayer = isInView && (isCurrentlyVisible || videoLoaded);
+    // Render the video section based on loading state and availability
+    const renderVideoSection = () => {
+        if (loading) {
+            return <div className="absolute inset-0 bg-gray-300 animate-pulse rounded-xl" />;
+        }
+
+        if (error) {
+            return (
+                <div className="absolute inset-0 text-center py-4 text-red-500 flex items-center justify-center rounded-xl">
+                    <p>{error}</p>
+                </div>
+            );
+        }
+
+        if (videoId) {
+            return (
+                <LiteYouTubeEmbed
+                    id={videoId}
+                    title={`${artist} - ${song}`}
+                    poster="hqdefault"
+                    webp={true}
+                    wrapperClass="yt-lite rounded-xl absolute inset-0"
+                    iframeClass="rounded-xl"
+                    playerClass="custom-play-button"
+                    noCookie={true}
+                    adNetwork={false}
+                />
+            );
+        }
+
+        return (
+            <div className="absolute inset-0 text-center py-4 text-gray-500 flex items-center justify-center rounded-xl">
+                <p>No video available</p>
+            </div>
+        );
+    };
 
 
     return (
@@ -264,68 +210,8 @@ export default function EntryCard({
                     </span>
                 </div>
 
-                <div
-                    ref={videoContainerRef}
-                    className="relative w-full mb-4"
-                    style={{ paddingTop: "56.25%" }} // 16:9 aspect ratio
-                >
-                    {videoUrl && !loading && !error ? (
-                        <>
-                            {shouldShowVideoPlayer ? (
-                                <div className="absolute top-0 left-0 w-full h-full">
-                                    {!videoLoaded && thumbnailUrl && (
-                                        <div className="absolute inset-0 z-10">
-                                            <img
-                                                src={thumbnailUrl}
-                                                alt=""
-                                                className="w-full h-full object-cover rounded"
-                                            />
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                                            </div>
-                                        </div>
-                                    )}
-                                    <VideoPlayer
-                                        videoUrl={videoUrl}
-                                        title={`${artist} - ${song}`}
-                                        onLoad={handleVideoLoad}
-                                        isVisible={isCurrentlyVisible}
-                                    />
-                                </div>
-                            ) : (
-                                <div className="absolute top-0 left-0 w-full h-full">
-                                    {thumbnailUrl ? (
-                                        <img
-                                            src={thumbnailUrl}
-                                            alt=""
-                                            className="w-full h-full object-cover rounded"
-                                            loading="eager"
-                                            fetchPriority="high"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full bg-gray-300 animate-pulse rounded" />
-                                    )}
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <svg
-                                            className="w-16 h-16 text-white opacity-75"
-                                            fill="currentColor"
-                                            viewBox="0 0 84 84"
-                                            xmlns="http://www.w3.org/2000/svg"
-                                        >
-                                            <circle cx="42" cy="42" r="42" fill="rgba(0,0,0,0.5)" />
-                                            <polygon fill="currentColor" points="33,27 33,57 57,42" />
-                                        </svg>
-                                    </div>
-                                </div>
-                            )}
-                        </>
-                    ) : loading ? (
-                        <div className="absolute top-0 left-0 w-full h-full bg-gray-300 animate-pulse rounded" />
-                    ) : error ? (
-                        <div className="absolute top-0 left-0 w-full h-full text-center py-4 text-red-500 flex items-center justify-center">
-                            <p>{error}</p>
-                        </div>
-                    ) : null}
+                <div className="relative w-full mb-4 rounded-xl overflow-hidden cursor-pointer" style={{ paddingBottom: videoId ? 0 : "56.25%" }}>
+                    {renderVideoSection()}
                 </div>
             </div>
         </div>
