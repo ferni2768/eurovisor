@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import EntryCard from "./EntryCard";
 import { EntryResult } from "@/types/eurovision";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 
 interface ResultsListProps {
@@ -28,12 +28,18 @@ interface CustomAnimationProps {
     exitScale: number;
 }
 
+// Memoized EntryCard to prevent re-renders when layout changes
+const MemoizedEntryCard = React.memo(EntryCard, (prevProps, nextProps) => {
+    return prevProps.contestantId === nextProps.contestantId &&
+        prevProps.year === nextProps.year;
+});
+
 // LazyCard component that reserves space via a placeholder even if not in view
-const LazyCard: React.FC<LazyCardProps> = ({ result, index, numberOfColumns, initialRowCount }) => {
+const LazyCard: React.FC<LazyCardProps> = React.memo(({ result, index, numberOfColumns, initialRowCount }) => {
     const [ref, inView] = useInView({
         triggerOnce: true,
-        rootMargin: '0px',
-        threshold: 0.1
+        rootMargin: "0px",
+        threshold: 0.1,
     });
 
     // Calculate row index for delay cascade
@@ -56,21 +62,24 @@ const LazyCard: React.FC<LazyCardProps> = ({ result, index, numberOfColumns, ini
         exitScale: initialScale,
     };
 
+    // Use reduced motion if requested (e.g. slower devices)
+    const shouldReduceMotion = useReducedMotion();
+
     const cardVariants = {
         hidden: (custom: CustomAnimationProps) => ({
             opacity: 0,
             scale: custom.initialScale,
             y: custom.initialY,
-            filter: `blur(${custom.initialBlur}px)`,
+            filter: shouldReduceMotion ? "none" : `blur(${custom.initialBlur}px)`,
         }),
         visible: (custom: CustomAnimationProps) => ({
             opacity: 1,
             scale: 1,
             y: 0,
-            filter: "blur(0px)",
+            filter: "none",
             transition: {
                 delay: custom.delay,
-                duration: 0.4 + Math.random() * 0.2,
+                duration: shouldReduceMotion ? 0.3 : 0.4 + Math.random() * 0.2,
                 ease: "easeOut",
             },
         }),
@@ -78,37 +87,32 @@ const LazyCard: React.FC<LazyCardProps> = ({ result, index, numberOfColumns, ini
             opacity: 0,
             scale: custom.exitScale,
             y: -custom.initialY,
-            filter: `blur(${custom.initialBlur}px)`,
+            filter: shouldReduceMotion ? "none" : `blur(${custom.initialBlur}px)`,
             transition: {
-                duration: 0.3 + Math.random() * 0.2,
+                duration: shouldReduceMotion ? 0.2 : 0.3 + Math.random() * 0.2,
                 ease: "easeIn",
             },
         }),
     };
+
+    // Create a stable key for the card that doesn't change with layout
+    const stableKey = `${result.year}-${result.contestantId}`;
 
     return (
         // Reserve the expected space with a fixed min-height
         <div ref={ref} className="min-h-[200px]">
             {inView ? (
                 <motion.div
-                    key={`${result.year}-${result.contestantId}`}
+                    key={stableKey}
                     custom={customProps}
                     variants={cardVariants}
                     initial="hidden"
                     animate="visible"
                     exit="exit"
+                    style={{ willChange: "transform, opacity" }}
+                    layoutId={stableKey}
                 >
-                    <EntryCard
-                        year={result.year}
-                        contestantId={result.contestantId}
-                        country={result.country}
-                        countryName={result.countryName}
-                        artist={result.artist}
-                        song={result.song}
-                        place={result.place}
-                        isWinner={result.isWinner}
-                        didQualify={result.didQualify}
-                    />
+                    <MemoizedEntryCard {...result} />
                 </motion.div>
             ) : (
                 // Placeholder div to reserve space before the card loads
@@ -116,7 +120,14 @@ const LazyCard: React.FC<LazyCardProps> = ({ result, index, numberOfColumns, ini
             )}
         </div>
     );
-};
+}, (prevProps, nextProps) => {
+    // Only re-render if the entry data changes or if index changes significantly
+    // This prevents re-renders when only the layout changes slightly
+    return prevProps.result.contestantId === nextProps.result.contestantId &&
+        prevProps.result.year === nextProps.result.year &&
+        Math.floor(prevProps.index / prevProps.numberOfColumns) ===
+        Math.floor(nextProps.index / nextProps.numberOfColumns);
+});
 
 const ResultsList: React.FC<ResultsListProps> = ({
     results,
@@ -129,6 +140,8 @@ const ResultsList: React.FC<ResultsListProps> = ({
     const [numberOfColumns, setNumberOfColumns] = useState(3);
     const [initialRowCount, setInitialRowCount] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
+    const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const orientationChangeInProgressRef = useRef(false);
 
     // Track current visible results
     const [visibleResults, setVisibleResults] = useState<EntryResult[]>([]);
@@ -137,7 +150,7 @@ const ResultsList: React.FC<ResultsListProps> = ({
     const [isExiting, setIsExiting] = useState(false);
 
     // Generate a unique key for the results list based on filters
-    const resultsKey = `${selectedYear || 'all'}-${selectedCountry || 'all'}-${showingWinners ? 'winners' : 'all'}`;
+    const resultsKey = `${selectedYear || "all"}-${selectedCountry || "all"}-${showingWinners ? "winners" : "all"}`;
 
     // Calculate the total height of the results list
     const calculateTotalHeight = (resultsList: EntryResult[]) => {
@@ -151,9 +164,13 @@ const ResultsList: React.FC<ResultsListProps> = ({
         return totalRows * cardHeight + (totalRows - 1) * gapSize;
     };
 
-    // Update column count based on screen width
-    useEffect(() => {
-        const updateColumnCount = () => {
+    // Debounced column count update to prevent frequent re-renders during resize
+    const updateColumnCount = useCallback(() => {
+        if (resizeTimeoutRef.current) {
+            clearTimeout(resizeTimeoutRef.current);
+        }
+
+        resizeTimeoutRef.current = setTimeout(() => {
             if (window.innerWidth < 768) {
                 setNumberOfColumns(1);
             } else if (window.innerWidth < 1024) {
@@ -161,12 +178,44 @@ const ResultsList: React.FC<ResultsListProps> = ({
             } else {
                 setNumberOfColumns(3);
             }
-        };
-
-        updateColumnCount();
-        window.addEventListener('resize', updateColumnCount);
-        return () => window.removeEventListener('resize', updateColumnCount);
+            resizeTimeoutRef.current = null;
+        }, 20);
     }, []);
+
+    // Handle orientation change separately from resize
+    const handleOrientationChange = useCallback(() => {
+        orientationChangeInProgressRef.current = true;
+        setTimeout(() => {
+            updateColumnCount();
+            orientationChangeInProgressRef.current = false;
+        }, 300);
+    }, [updateColumnCount]);
+
+    // Update column count based on screen width and orientation
+    useEffect(() => {
+        updateColumnCount();
+        window.addEventListener("resize", updateColumnCount);
+
+        if (window.screen && window.screen.orientation) {
+            window.screen.orientation.addEventListener("change", handleOrientationChange);
+        } else {
+            window.addEventListener("orientationchange", handleOrientationChange);
+        }
+
+        return () => {
+            window.removeEventListener("resize", updateColumnCount);
+
+            if (window.screen && window.screen.orientation) {
+                window.screen.orientation.removeEventListener("change", handleOrientationChange);
+            } else {
+                window.removeEventListener("orientationchange", handleOrientationChange);
+            }
+
+            if (resizeTimeoutRef.current) {
+                clearTimeout(resizeTimeoutRef.current);
+            }
+        };
+    }, [updateColumnCount, handleOrientationChange]);
 
     // Estimate initially visible rows based on window height
     useEffect(() => {
@@ -175,22 +224,18 @@ const ResultsList: React.FC<ResultsListProps> = ({
         setInitialRowCount(visibleRows);
     }, []);
 
-    // Handle changes to filters - this triggers exit animations
+    // Handle changes to filters - trigger exit animations
     useEffect(() => {
-        // If we have visible results and filters change, trigger exit animations
         if (visibleResults.length > 0) {
             setIsExiting(true);
         }
     }, [selectedYear, selectedCountry, showingWinners]);
 
-    // Handle changes to results or loading state
+    // Update visible results when not in exiting state
     useEffect(() => {
-        // If we're not in exiting state and have results, update visible results
         if (!isExiting && results.length > 0 && !loading) {
             setVisibleResults(results);
-        }
-        // If we're not exiting and have no results but are not loading, clear visible results
-        else if (!isExiting && results.length === 0 && !loading) {
+        } else if (!isExiting && results.length === 0 && !loading) {
             setVisibleResults([]);
         }
     }, [results, loading, isExiting]);
@@ -202,13 +247,10 @@ const ResultsList: React.FC<ResultsListProps> = ({
         setVisibleResults(loading ? [] : results);
     };
 
-    // Initial loading state - no results yet and loading
+    // Initial loading state
     if (visibleResults.length === 0 && loading && !isExiting) {
         return (
-            <div
-                className="relative"
-                style={{ height: "300px" }}
-            >
+            <div className="relative" style={{ height: "300px" }}>
                 <div className="absolute top-1/2 mt-10 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                     <svg
                         className="animate-spin h-10 w-10 text-indigo-500"
@@ -258,10 +300,7 @@ const ResultsList: React.FC<ResultsListProps> = ({
 
     return (
         <div className="mb-16 relative backdrop-blur-xl">
-            <AnimatePresence
-                mode="wait"
-                onExitComplete={handleExitComplete}
-            >
+            <AnimatePresence mode="wait" onExitComplete={handleExitComplete}>
                 <div
                     key={isExiting ? "exiting-" + resultsKey : resultsKey}
                     ref={containerRef}

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import FilterSection from "@/components/FilterSection";
 import FilterStatusMessage from "@/components/FilterStatusMessage";
 import ResultsList from "@/components/ResultsList";
@@ -49,6 +49,9 @@ export default function Home() {
   const [countryNames, setCountryNames] = useState<Record<string, string>>({});
   const [initialDataLoaded, setInitialDataLoaded] = useState<boolean>(false);
   const [showingWinners, setShowingWinners] = useState<boolean>(false);
+
+  // Ref to hold the current AbortController for cancellation
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Initialize OverlayScrollbars
   const [initialize, instance] = useOverlayScrollbars({
@@ -125,8 +128,15 @@ export default function Home() {
     loadInitialData();
   }, []);
 
-  // Handle filter changes
+  // Handle filter changes with cancellation of previous requests
   const applyFilters = useCallback(async () => {
+    // Cancel previous pending requests if any
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     if (!initialDataLoaded) return;
 
     setLoading(true);
@@ -139,7 +149,7 @@ export default function Home() {
         await fetchWinners(
           contests,
           countryNames,
-          { setLoading, setError, setShowingWinners, setResults }
+          { setLoading, setError, setShowingWinners, setResults, signal: controller.signal }
         );
         return;
       } else {
@@ -152,7 +162,7 @@ export default function Home() {
           selectedYear,
           selectedCountry,
           countryNames,
-          { setLoading, setError, setResults, setCurrentContest }
+          { setLoading, setError, setResults, setCurrentContest, signal: controller.signal }
         );
       }
       // Case 3: Only year selected
@@ -160,7 +170,7 @@ export default function Home() {
         await fetchYearEntries(
           selectedYear,
           countryNames,
-          { setLoading, setError, setResults, setCurrentContest }
+          { setLoading, setError, setResults, setCurrentContest, signal: controller.signal }
         );
       }
       // Case 4: Only country selected
@@ -169,10 +179,15 @@ export default function Home() {
           selectedCountry,
           contests,
           countryNames,
-          { setLoading, setError, setResults }
+          { setLoading, setError, setResults, signal: controller.signal }
         );
       }
-    } catch (err) {
+    } catch (err: any) {
+      // If the error is an abort error, simply return
+      if (err.name === "AbortError") {
+        console.log("Request aborted");
+        return;
+      }
       console.error("Error applying filters:", err);
       setError("Failed to apply filters. Please try again.");
       setShowingWinners(false);
