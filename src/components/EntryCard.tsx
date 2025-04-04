@@ -137,7 +137,6 @@ export default function EntryCard({
                     id={videoId}
                     title={`${artist} - ${song}`}
                     poster="hqdefault"
-                    webp={true}
                     wrapperClass="yt-lite rounded-xl absolute inset-0"
                     iframeClass="rounded-xl"
                     playerClass="custom-play-button"
