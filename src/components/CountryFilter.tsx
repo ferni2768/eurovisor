@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Flag from "react-world-flags";
 import { getCountries } from "@/services/eurovisionService";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
 import "overlayscrollbars/overlayscrollbars.css";
 
@@ -121,7 +121,7 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
         <div className="w-full md:w-1/2 overflow-visible" ref={dropdownRef}>
             <label
                 htmlFor="country-filter"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-white mb-1"
             >
                 Filter by Country
             </label>
@@ -130,7 +130,7 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
                     <motion.button
                         id="country-filter"
                         onClick={() => setIsOpen(!isOpen)}
-                        className="w-full bg-white/75 border border-gray-300 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-indigo-500 py-2 px-5 text-left flex items-center justify-between transition-all duration-200 cursor-pointer"
+                        className="w-full bg-white/55 border border-gray-300 shadow-sm focus:outline-none focus:border-white py-2 px-5 text-left flex items-center justify-between transition-all duration-200 cursor-pointer"
                         layout
                         animate={{
                             borderRadius: isOpen ? "1.5rem 1.5rem 0 0" : "1.5rem",
@@ -141,7 +141,7 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
                         disabled={loading}
                     >
                         {loading ? (
-                            <span className="text-gray-400">Loading countries...</span>
+                            <span className="text-black">Loading countries...</span>
                         ) : selectedCountryObj ? (
                             <div className="flex items-center gap-2">
                                 {selectedCountryObj.code === "YU" ? (
@@ -164,10 +164,10 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
                                         className="rounded inline-block"
                                     />
                                 )}
-                                <span className="text-gray-500">{selectedCountryObj.name}</span>
+                                <span className="text-black">{selectedCountryObj.name}</span>
                             </div>
                         ) : (
-                            <span className="text-gray-400">All Countries</span>
+                            <span className="text-black">All Countries</span>
                         )}
                         <svg
                             className="w-5 h-5 text-gray-500"
@@ -188,7 +188,7 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
                         variants={variants}
                         animate={isOpen ? "open" : "closed"}
                         initial="closed"
-                        className="absolute z-10 w-full bg-white border border-gray-300 shadow-lg overflow-hidden"
+                        className="absolute z-10 w-full bg-neutral-800 border border-gray-300 shadow-lg overflow-hidden"
                         style={{ borderTop: "none" }}
                     >
                         <OverlayScrollbarsComponent
@@ -213,14 +213,14 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
                                     onCountryChange(null);
                                     setIsOpen(false);
                                 }}
-                                className="cursor-pointer hover:bg-gray-100 rounded-2xl py-2 px-3 flex items-center justify-between"
+                                className="cursor-pointer hover:bg-gray-500 rounded-2xl py-2 px-3 flex items-center justify-between"
                             >
-                                <span className="text-gray-400">All Countries</span>
+                                <span className="text-gray-50">All Countries</span>
                             </div>
 
                             {/* Loading indicator */}
                             {loading && (
-                                <div className="py-4 text-center text-gray-500">
+                                <div className="py-4 text-center text-gray-50">
                                     <svg
                                         className="animate-spin h-5 w-5 mx-auto mb-2"
                                         xmlns="http://www.w3.org/2000/svg"
@@ -260,7 +260,7 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
                                             onCountryChange(country.code);
                                             setIsOpen(false);
                                         }}
-                                        className="cursor-pointer hover:bg-gray-100 rounded-2xl py-2 px-3 flex items-center"
+                                        className="cursor-pointer hover:bg-gray-500 rounded-2xl py-2 px-3 flex items-center"
                                     >
                                         {country.code === "YU" ? (
                                             <div className="flex">
@@ -286,37 +286,39 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
                                                 className="rounded inline-block"
                                             />
                                         )}
-                                        <span className="ml-2 text-gray-500">{country.name}</span>
+                                        <span className="ml-2 text-gray-50">{country.name}</span>
                                     </div>
                                 ))}
                         </OverlayScrollbarsComponent>
                     </motion.div>
                 </div>
-                {selectedCountry && (
-                    <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: "40px" }}
-                        exit={{ width: 0 }}
-                        transition={{
-                            duration: 0.3,
-                            ease: "easeInOut",
-                        }}
-                        className="ml-2 overflow-hidden"
-                    >
-                        <motion.button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onCountryChange(null);
-                                setIsOpen(false);
+                <AnimatePresence>
+                    {selectedCountry && (
+                        <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: "40px" }}
+                            exit={{ width: 0 }}
+                            transition={{
+                                duration: 0.3,
+                                ease: "easeInOut",
                             }}
-                            className="bg-white/60 hover:bg-white/100 cursor-pointer text-gray-800 font-bold py-2 px-4 rounded-full w-[40px] h-full flex items-center justify-center"
-                            aria-label="Clear country filter"
-                            style={{ minWidth: "40px" }}
+                            className="ml-2 overflow-hidden"
                         >
-                            ✕
-                        </motion.button>
-                    </motion.div>
-                )}
+                            <motion.button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onCountryChange(null);
+                                    setIsOpen(false);
+                                }}
+                                className="bg-white/60 hover:bg-white/100 cursor-pointer text-gray-800 font-bold py-2 px-4 rounded-full w-[40px] h-full flex items-center justify-center"
+                                aria-label="Clear country filter"
+                                style={{ minWidth: "40px" }}
+                            >
+                                ✕
+                            </motion.button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     );

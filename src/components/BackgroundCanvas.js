@@ -28,7 +28,7 @@ export default function BackgroundCanvas() {
         const hiddenCtx = hiddenCanvas.getContext('2d');
         const visibleCtx = visibleCanvas.getContext('2d');
         const noiseGenerator = createNoise3D();
-        const currentHue = { value: settings.baseHue }; // Mutable object for hue cycling
+        const currentHue = { value: settings.baseHue };
 
         // Circle class to manage individual bubble properties and behavior
         class Circle {
@@ -75,7 +75,7 @@ export default function BackgroundCanvas() {
                 const alpha = settings.minOpacity + fade * (settings.maxOpacity - settings.minOpacity);
                 hiddenCtx.beginPath();
                 hiddenCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                hiddenCtx.fillStyle = `hsla(${this.hue}, 90%, 55%, ${alpha})`;
+                hiddenCtx.fillStyle = `hsla(${this.hue}, 100%, 10%, 1)`;
                 hiddenCtx.fill();
             }
         }
@@ -128,7 +128,7 @@ export default function BackgroundCanvas() {
             <canvas ref={hiddenCanvasRef} style={{ display: 'none' }} />
             <canvas
                 ref={visibleCanvasRef}
-                style={{ position: 'fixed', top: 0, left: 0, height: '120vh', opacity: 0.25, filter: 'blur(250px)' }}
+                style={{ position: 'fixed', top: 0, left: 0, height: '120vh', opacity: 1, filter: 'blur(250px)' }}
             />
         </>
     );

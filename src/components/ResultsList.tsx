@@ -47,9 +47,9 @@ const LazyCard: React.FC<LazyCardProps> = React.memo(({ result, index, numberOfC
     const isInitiallyVisible = rowIndex < initialRowCount;
 
     // For initially visible cards use a cascade delay, for later ones nearly instant
-    const baseDelay = numberOfColumns === 1 ? 0.05 : 0.1;
+    const baseDelay = numberOfColumns === 1 ? 0.1 : 0.1;
     const delay = isInitiallyVisible
-        ? baseDelay * rowIndex + Math.random() * 0.1
+        ? baseDelay * rowIndex + Math.random() * 0.175
         : 0.01;
     const initialScale = 0.95 + Math.random() * 0.03;
     const initialY = 40 + Math.random() * 15;
@@ -79,7 +79,7 @@ const LazyCard: React.FC<LazyCardProps> = React.memo(({ result, index, numberOfC
             filter: "none",
             transition: {
                 delay: custom.delay,
-                duration: shouldReduceMotion ? 0.3 : 0.4 + Math.random() * 0.2,
+                duration: shouldReduceMotion ? 0.3 : 0.3 + Math.random() * 0.2,
                 ease: "easeOut",
             },
         }),

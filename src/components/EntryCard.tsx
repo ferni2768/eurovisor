@@ -155,17 +155,17 @@ export default function EntryCard({
 
 
     return (
-        <div className="bg-white/70 rounded-3xl shadow-xl overflow-hidden transition-transform duration-300 hover:shadow-2xl hover:-translate-y-1 border-white/20 border-2">
+        <div className="bg-white/25 rounded-3xl overflow-hidden transition-transform duration-300 hover:-translate-y-2 border-white/20 border-2 shadow-[0_5px_15px_rgba(176,167,235,0.1)]">
             <div className="p-4">
                 <div className="flex justify-between items-start mb-2">
                     <div>
-                        <h3 className="text-lg font-semibold text-gray-800">{song}</h3>
-                        <p className="text-gray-600">{artist}</p>
+                        <h3 className="text-lg font-semibold text-white">{song}</h3>
+                        <p className="text-white">{artist}</p>
                     </div>
                     {renderBadge()}
                 </div>
 
-                <div className="flex items-center text-sm text-gray-500 mb-4">
+                <div className="flex items-center text-sm text-white mb-4">
                     <span className="flex items-center">
                         {country === "YU" ? (
                             <div className="flex mr-1">

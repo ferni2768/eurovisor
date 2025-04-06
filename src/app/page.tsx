@@ -31,10 +31,15 @@ const customScrollbarStyles = `
     --os-size: 12px;
     --os-padding-perpendicular: 2px;
   }
-  
-  /* Additional styling for the scrollbar */
+
   .os-scrollbar-handle {
     border-radius: 10px;
+    margin-right: 2px;
+    background-color: rgba(255, 255, 255, 0.4);
+  }
+
+  .os-scrollbar-track .os-scrollbar-handle:hover {
+    background-color: rgba(200, 200, 200, 0.8) !important;
   }
 `;
 
@@ -207,7 +212,7 @@ export default function Home() {
   return (
     <>
       <BackgroundCanvas />
-      <div className="min-h-screen relative p-4">
+      <div className="min-h-screen relative p-4.5">
         <header className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-indigo-50">Eurovisor</h1>
           <p className="text-gray-300">Explore Eurovision Song Contest performances</p>
