@@ -5,7 +5,7 @@ import { getBackgroundHueConfig } from '../utils/backgroundHueConfig';
 export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
     // Configuration object for customization
     const settings = {
-        bubbleCount: 25,
+        bubbleCount: 50,
         baseMinBubbleSize: 200,
         baseMaxBubbleSizeRange: 400,
         baseSpeedFactor: 0.5,
@@ -19,12 +19,17 @@ export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
         maxOpacity: 1,
         minOpacity: 1,
         backgroundColor: 'rgba(249, 250, 251, 0)',
-        blurAmount: 70,
-        blurScale: 1,
+        blurAmount: 65,
+        blurScale: 2,
         fadeInDuration: 1000,
         fadeOutDuration: 350,
     };
 
+    // Fixed render resolution (HD)
+    const FIXED_WIDTH = 1280;
+    const FIXED_HEIGHT = 720;
+
+    // Refs and state
     const blur = useRef(100);
     const hiddenCanvasRef = useRef(null);
     const visibleCanvasRef = useRef(null);
@@ -34,31 +39,28 @@ export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
     const animationRef = useRef(null);
     const [hueConfig, setHueConfig] = useState([]);
     const prevHueConfigRef = useRef([]);
-    const [windowSize, setWindowSize] = useState({
-        width: typeof window !== 'undefined' ? window.innerWidth : settings.referenceWidth,
-        height: typeof window !== 'undefined' ? window.innerHeight : settings.referenceHeight
-    });
+    const prevWindowSizeRef = useRef({ width: 0, height: 0 });
 
-    // Calculate scale factor for speed based on window size
-    const getSpeedScaleFactor = (w, h) => {
-        const widthRatio = w / settings.referenceWidth;
-        const heightRatio = h / settings.referenceHeight;
+    // Scale factor functions based on the fixed resolution
+    const getSpeedScaleFactor = () => {
+        const widthRatio = FIXED_WIDTH / settings.referenceWidth;
+        const heightRatio = FIXED_HEIGHT / settings.referenceHeight;
         return (widthRatio + heightRatio) / 4;
     };
 
-    // Calculate scale factor for bubble size based on window width
-    const getSizeScaleFactor = (w) => w / settings.referenceWidth;
+    const getSizeScaleFactor = () => FIXED_WIDTH / settings.referenceWidth;
 
-    // Initialize noise generator and hue config on mount
+    // Initialize noise generator and hue configuration on mount
     useEffect(() => {
         noiseGenerator.current = createNoise3D();
         const initialHueConfig = getBackgroundHueConfig({ selectedYear, selectedCountry });
         setHueConfig(initialHueConfig);
         prevHueConfigRef.current = initialHueConfig;
+        prevWindowSizeRef.current = { width: window.innerWidth, height: window.innerHeight };
         return () => {
             if (animationRef.current) cancelAnimationFrame(animationRef.current);
         };
-    }, []); // run once
+    }, []);
 
     // Update hue configuration when filters change
     useEffect(() => {
@@ -96,7 +98,7 @@ export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
             const canvas = hiddenCanvasRef.current;
             if (!canvas) return;
 
-            // Generate random position and assign to the bubble
+            // Generate random position on the fixed resolution canvas
             const x = Math.random() * canvas.width;
             const y = Math.random() * canvas.height;
             this.x = x;
@@ -117,10 +119,10 @@ export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
             this.hue = baseHue + ((noise + 1) / 2) * hueRange;
             if (hueRange < 360) this.hue = this.hue % 360;
 
-            // Calculate and assign radius scaled by the size scale factor
+            // Calculate radius scaled by the size scale factor
             this.radius = (settings.baseMinBubbleSize + Math.random() * settings.baseMaxBubbleSizeRange) * this.sizeScale;
 
-            // Define movement direction and speed
+            // Set movement direction and speed
             const direction = Math.random() * Math.PI * 2;
             const speed = (Math.random() + 0.1) * settings.baseSpeedFactor * this.speedScale;
             this.vx = Math.cos(direction) * speed;
@@ -139,17 +141,26 @@ export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
         }
 
         move(deltaTime) {
-            this.x += this.vx;
-            this.y += this.vy;
-            this.life++;
+            // Only update movement if the bubble is still within its lifetime
+            // Once its lifetime is exceeded, freeze the position
+            if (this.life < this.totalLife) {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life++;
+                // When lifetime is exceeded, freeze movement by setting velocity to zero
+                if (this.life >= this.totalLife) {
+                    this.vx = 0;
+                    this.vy = 0;
+                }
+            }
 
-            // If bubble is off screen or has exceeded its lifetime, start fade-out
-            if ((this.isOffScreen() || this.life > this.totalLife) && this.transitionState === 'stable') {
+            // Only trigger fade-out on off-screen condition if the bubble is still active
+            if (this.isOffScreen() && this.life < this.totalLife && this.transitionState === 'stable') {
                 this.transitionState = 'fade-out';
                 this.transitionProgress = 0;
             }
 
-            // Handle opacity transitions
+            // Handle transitions; fade-in is allowed until complete.
             if (this.transitionState === 'fade-in') {
                 this.transitionProgress += deltaTime;
                 const progress = Math.min(this.transitionProgress / settings.fadeInDuration, 1);
@@ -163,11 +174,12 @@ export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
                 const progress = Math.min(this.transitionProgress / settings.fadeOutDuration, 1);
                 this.opacity = (1 - progress) * settings.maxOpacity;
                 if (progress >= 1) {
+                    // For bubbles that are fading out due to going off screen,
+                    // we reset them. (This condition applies only to bubbles still active)
                     this.reset(true);
                 }
             }
-
-            return false;
+            // Otherwise, if the bubble's lifetime is over, it remains static with the same opacity
         }
 
         isOffScreen() {
@@ -187,12 +199,12 @@ export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
             const alpha = baseAlpha * this.opacity;
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-            ctx.fillStyle = `hsla(${this.hue}, 100%, 10%, ${alpha})`;
+            ctx.fillStyle = `hsla(${this.hue}, 100%, 12%, ${alpha})`;
             ctx.fill();
         }
     }
 
-    // Main canvas setup and animation
+    // Main canvas setup and animation effect
     useEffect(() => {
         if (!hiddenCanvasRef.current || !visibleCanvasRef.current) return;
 
@@ -201,58 +213,65 @@ export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
         const hiddenCtx = hiddenCanvas.getContext('2d');
         const visibleCtx = visibleCanvas.getContext('2d');
 
-        // Set canvas sizes
-        hiddenCanvas.width = windowSize.width;
-        hiddenCanvas.height = windowSize.height;
-        visibleCanvas.width = windowSize.width;
-        visibleCanvas.height = windowSize.height;
+        // Set the hidden canvas to a fixed resolution
+        hiddenCanvas.width = FIXED_WIDTH;
+        hiddenCanvas.height = FIXED_HEIGHT;
 
-        // Compute scale factors
-        const speedScale = getSpeedScaleFactor(windowSize.width, windowSize.height);
-        const sizeScale = getSizeScaleFactor(windowSize.width);
+        // Set the visible canvas to fill the window
+        const setVisibleCanvasSize = () => {
+            visibleCanvas.width = window.innerWidth;
+            visibleCanvas.height = window.innerHeight;
+        };
+        setVisibleCanvasSize();
+
+        // Compute scale factors based on the fixed resolution
+        const speedScale = getSpeedScaleFactor();
+        const sizeScale = getSizeScaleFactor();
 
         if (bubblesRef.current.length === 0 && hueConfig.length > 0) {
             bubblesRef.current = createNewBubbles(speedScale, sizeScale);
         }
 
-        const adjustCanvas = () => {
+        // Function to check for significant resize and update blur
+        const checkSignificantResize = () => {
             const windowWidth = window.innerWidth;
             const windowHeight = window.innerHeight;
 
             const isSignificantResize =
-                Math.abs(windowSize.width - windowWidth) > 10 ||
-                Math.abs(windowSize.height - windowHeight) > 100;
+                Math.abs(prevWindowSizeRef.current.width - windowWidth) > 10 ||
+                Math.abs(prevWindowSizeRef.current.height - windowHeight) > 100;
 
             if (isSignificantResize) {
-                setWindowSize({ width: windowWidth, height: windowHeight });
+                prevWindowSizeRef.current = { width: windowWidth, height: windowHeight };
 
-                hiddenCanvas.width = windowWidth;
-                hiddenCanvas.height = windowHeight;
-                visibleCanvas.width = windowWidth;
-                visibleCanvas.height = windowHeight;
+                // Recalculate blur based on the greater of width or height
+                const widthRatio = windowWidth / settings.referenceWidth;
+                const heightRatio = (windowHeight * 1.5) / (settings.referenceHeight * 1.5);
+                const maxRatio = Math.max(widthRatio, heightRatio);
 
-                const newSpeedScale = getSpeedScaleFactor(windowWidth, windowHeight);
-                const newSizeScale = getSizeScaleFactor(windowWidth);
+                blur.current = Math.max(settings.blurAmount * (1 + (maxRatio - 1) * settings.blurScale), settings.blurAmount);
 
-                // Reset existing bubbles with updated scale factors
-                bubblesRef.current.forEach(bubble => {
-                    bubble.speedScale = newSpeedScale;
-                    bubble.sizeScale = newSizeScale;
-                    bubble.reset();
-                });
+                // Update the canvas style to reflect the new blur value
+                if (visibleCanvas) {
+                    visibleCanvas.style.filter = `blur(${blur.current}px)`;
+                }
             }
         };
 
-        adjustCanvas();
+        // Resize visible canvas on window resize and orientation change
+        const adjustVisibleCanvas = () => {
+            setVisibleCanvasSize();
+            checkSignificantResize();
+        };
 
-        window.addEventListener('resize', adjustCanvas);
+        window.addEventListener('resize', adjustVisibleCanvas);
         if (window.screen && window.screen.orientation) {
-            window.screen.orientation.addEventListener('change', adjustCanvas);
+            window.screen.orientation.addEventListener('change', adjustVisibleCanvas);
         } else if (window.orientation !== undefined) {
-            window.addEventListener('orientationchange', adjustCanvas);
+            window.addEventListener('orientationchange', adjustVisibleCanvas);
         }
         if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', adjustCanvas);
+            window.visualViewport.addEventListener('resize', adjustVisibleCanvas);
         }
 
         let lastTime = 0;
@@ -260,50 +279,69 @@ export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
             const deltaTime = lastTime ? timestamp - lastTime : 16;
             lastTime = timestamp;
 
+            // Optionally update the base hue if cycling is enabled
             if (settings.cycleBaseHue) {
                 currentHueRef.current.value += settings.baseSpeedFactor;
             }
 
+            // Clear and render on the fixed hidden canvas
             hiddenCtx.clearRect(0, 0, hiddenCanvas.width, hiddenCanvas.height);
-            visibleCtx.fillStyle = settings.backgroundColor;
-            visibleCtx.fillRect(0, 0, visibleCanvas.width, visibleCanvas.height);
+            bubblesRef.current.forEach(bubble => {
+                bubble.move(deltaTime);
+                bubble.render(hiddenCtx);
+            });
 
-            // Update and render bubbles
-            bubblesRef.current.forEach(bubble => bubble.move(deltaTime));
-            bubblesRef.current.forEach(bubble => bubble.render(hiddenCtx));
-
-            // Compute effective blur based on screen size and blur scale factor
-            blur.current = Math.max(settings.blurAmount * (1 + ((windowSize.width / settings.referenceWidth) - 1) * settings.blurScale), 80);
-            visibleCtx.drawImage(hiddenCanvas, 0, 0);
+            // Draw the fixed resolution hidden canvas onto the visible canvas, scaling to fill
+            visibleCtx.clearRect(0, 0, visibleCanvas.width, visibleCanvas.height);
+            visibleCtx.drawImage(
+                hiddenCanvas,
+                0, 0, hiddenCanvas.width, hiddenCanvas.height,
+                0, 0, visibleCanvas.width, visibleCanvas.height
+            );
 
             animationRef.current = requestAnimationFrame(renderFrame);
         };
 
+        // Initial blur calculation
+        const widthRatio = visibleCanvas.width / settings.referenceWidth;
+        const heightRatio = visibleCanvas.height / settings.referenceWidth;
+        const maxRatio = Math.max(widthRatio, heightRatio);
+
+        blur.current = Math.max(
+            settings.blurAmount * (1 + (maxRatio - 1) * settings.blurScale),
+            80
+        );
+
+        // Set initial blur
+        visibleCanvas.style.filter = `blur(${blur.current}px)`;
+
         animationRef.current = requestAnimationFrame(renderFrame);
 
         return () => {
-            window.removeEventListener('resize', adjustCanvas);
+            window.removeEventListener('resize', adjustVisibleCanvas);
             if (window.screen && window.screen.orientation) {
-                window.screen.orientation.removeEventListener('change', adjustCanvas);
+                window.screen.orientation.removeEventListener('change', adjustVisibleCanvas);
             } else if (window.orientation !== undefined) {
-                window.removeEventListener('orientationchange', adjustCanvas);
+                window.removeEventListener('orientationchange', adjustVisibleCanvas);
             }
             if (window.visualViewport) {
-                window.visualViewport.removeEventListener('resize', adjustCanvas);
+                window.visualViewport.removeEventListener('resize', adjustVisibleCanvas);
             }
             cancelAnimationFrame(animationRef.current);
         };
-    }, [hueConfig, windowSize]);
+    }, [hueConfig]);
 
-    // Handle hue configuration changes - fade out old bubbles and add new ones
+    // When hue configuration changes, fade out old bubbles and add new ones (for those still active)
     useEffect(() => {
         if (hueConfig.length === 0) return;
         bubblesRef.current.forEach(bubble => {
-            bubble.transitionState = 'fade-out';
-            bubble.transitionProgress = 0;
+            if (bubble.life < bubble.totalLife) {
+                bubble.transitionState = 'fade-out';
+                bubble.transitionProgress = 0;
+            }
         });
-        const speedScale = getSpeedScaleFactor(windowSize.width, windowSize.height);
-        const sizeScale = getSizeScaleFactor(windowSize.width);
+        const speedScale = getSpeedScaleFactor();
+        const sizeScale = getSizeScaleFactor();
         const newBubbles = createNewBubbles(speedScale, sizeScale);
         bubblesRef.current = [...bubblesRef.current, ...newBubbles];
     }, [hueConfig]);
