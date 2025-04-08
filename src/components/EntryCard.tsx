@@ -88,26 +88,26 @@ export default function EntryCard({
     const renderBadge = () => {
         if (year === 2020) {
             return (
-                <div className="text-sm font-medium px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800">
+                <div className="text-sm font-medium px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 whitespace-nowrap flex-shrink-0">
                     😷 COVID Canceled
                 </div>
             );
         } else if (isWinner) {
             return (
-                <div className="text-sm font-medium px-2.5 py-0.5 rounded-full bg-yellow-100 text-yellow-800">
+                <div className="text-sm font-medium px-2.5 py-0.5 rounded-full bg-yellow-100 text-yellow-800 whitespace-nowrap flex-shrink-0">
                     🏆 Winner
                 </div>
             );
         } else if (didQualify === false) {
             return (
-                <div className="text-sm font-medium px-2.5 py-0.5 rounded-full bg-red-100 text-red-800">
+                <div className="text-sm font-medium px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 whitespace-nowrap flex-shrink-0">
                     ❌ Non-Qualifying
                 </div>
             );
         } else if (place !== undefined) {
             return (
                 <div
-                    className={`text-sm font-medium px-2.5 py-0.5 rounded-full ${place <= 3 ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"
+                    className={`text-sm font-medium px-2.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${place <= 3 ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"
                         }`}
                 >
                     {`${place}${getOrdinalSuffix(place)} place`}
@@ -120,7 +120,7 @@ export default function EntryCard({
     // Render the video section based on loading state and availability
     const renderVideoSection = () => {
         if (loading) {
-            return <div className="absolute inset-0 bg-gray-300 animate-pulse rounded-xl" />;
+            return <div className="absolute inset-0 bg-neutral-600/50 animate-pulse rounded-xl" />;
         }
 
         if (error) {
@@ -157,8 +157,8 @@ export default function EntryCard({
     return (
         <div className="bg-white/25 rounded-3xl overflow-hidden transition-transform duration-300 hover:-translate-y-2 border-white/20 border-2 shadow-[0_5px_15px_rgba(176,167,235,0.1)]">
             <div className="p-4">
-                <div className="flex justify-between items-start mb-2">
-                    <div>
+                <div className="flex justify-between items-start mb-2 gap-2">
+                    <div className="min-w-0 flex-1 overflow-hidden">
                         <h3 className="text-lg font-semibold text-white">{song}</h3>
                         <p className="text-white">{artist}</p>
                     </div>
