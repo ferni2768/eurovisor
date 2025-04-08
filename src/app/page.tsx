@@ -211,7 +211,11 @@ export default function Home() {
 
   return (
     <>
-      <BackgroundCanvas />
+      <BackgroundCanvas
+        selectedYear={selectedYear}
+        selectedCountry={selectedCountry}
+      />
+
       <div className="min-h-screen relative p-4.5">
         <header className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-indigo-50">Eurovisor</h1>

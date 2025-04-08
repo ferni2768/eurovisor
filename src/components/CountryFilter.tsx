@@ -130,7 +130,7 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
                     <motion.button
                         id="country-filter"
                         onClick={() => setIsOpen(!isOpen)}
-                        className="w-full bg-white/55 border border-gray-300 shadow-sm focus:outline-none focus:border-white py-2 px-5 text-left flex items-center justify-between transition-all duration-200 cursor-pointer"
+                        className="w-full rounded-full bg-white/55 hover:bg-white/70 border border-gray-300 shadow-sm focus:outline-none focus:border-white py-2 px-5 text-left flex items-center justify-between transition-all duration-200 cursor-pointer"
                         layout
                         animate={{
                             borderRadius: isOpen ? "1.5rem 1.5rem 0 0" : "1.5rem",

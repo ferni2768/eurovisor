@@ -299,7 +299,7 @@ const ResultsList: React.FC<ResultsListProps> = ({
 
 
     return (
-        <div className="mb-16 relative backdrop-blur-xl">
+        <div className="mb-16 relative">
             <AnimatePresence mode="wait" onExitComplete={handleExitComplete}>
                 <div
                     key={isExiting ? "exiting-" + resultsKey : resultsKey}
