@@ -16,8 +16,8 @@ export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
         baseHue: 0,
         hueRange: 360,
         cycleBaseHue: false,
-        maxOpacity: 1,
-        minOpacity: 1,
+        minOpacity: 0.6,
+        maxOpacity: 0.9,
         backgroundColor: 'rgba(249, 250, 251, 0)',
         blurAmount: 65,
         blurScale: 2,
@@ -25,9 +25,9 @@ export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
         fadeOutDuration: 350,
     };
 
-    // Fixed render resolution (HD)
-    const FIXED_WIDTH = 1280;
-    const FIXED_HEIGHT = 720;
+    // Render resolution
+    const FIXED_WIDTH = 80;
+    const FIXED_HEIGHT = 45;
 
     // Refs and state
     const blur = useRef(100);
