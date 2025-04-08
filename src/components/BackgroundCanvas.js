@@ -5,7 +5,7 @@ import { getBackgroundHueConfig } from '../utils/backgroundHueConfig';
 export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
     // Configuration object for customization
     const settings = {
-        bubbleCount: 50,
+        bubbleCount: 30,
         baseMinBubbleSize: 200,
         baseMaxBubbleSizeRange: 400,
         baseSpeedFactor: 0.5,

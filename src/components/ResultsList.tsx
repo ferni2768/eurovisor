@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import EntryCard from "./EntryCard";
 import { EntryResult } from "@/types/eurovision";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion, delay } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 
 interface ResultsListProps {
@@ -252,26 +252,24 @@ const ResultsList: React.FC<ResultsListProps> = ({
         return (
             <div className="relative" style={{ height: "300px" }}>
                 <div className="absolute top-1/2 mt-10 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                    <svg
-                        className="animate-spin h-10 w-10 text-indigo-500"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                    >
-                        <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                        ></circle>
-                        <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                    </svg>
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+                        <motion.svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            height="60px"
+                            viewBox="0 -960 960 960"
+                            width="60px"
+                            fill="#ffffff"
+                            className="animate-bounce"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 0.6 }}
+                            exit={{ opacity: 0 }}
+                            transition={{
+                                opacity: { duration: 0.5, ease: "easeInOut", delay: 0.3 },
+                            }}
+                        >
+                            <path d="M400-120q-66 0-113-47t-47-113q0-66 47-113t113-47q23 0 42.5 5.5T480-418v-422h240v160H560v400q0 66-47 113t-113 47Z" />
+                        </motion.svg>
+                    </div>
                 </div>
             </div>
         );
@@ -289,13 +287,7 @@ const ResultsList: React.FC<ResultsListProps> = ({
         );
     }
 
-    if (visibleResults.length === 0 && !loading && !isExiting) {
-        return (
-            <div className="text-center py-8 text-gray-500">
-                <p>No results found. Try adjusting your filters.</p>
-            </div>
-        );
-    }
+    if (visibleResults.length === 0 && !loading && !isExiting) { return (<></>); }
 
 
     return (
@@ -322,26 +314,22 @@ const ResultsList: React.FC<ResultsListProps> = ({
             {/* Show loading spinner when exiting and loading new results */}
             {isExiting && loading && (
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
-                    <svg
-                        className="animate-spin h-10 w-10 text-indigo-500"
+                    <motion.svg
                         xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
+                        height="40px"
+                        viewBox="0 -960 960 960"
+                        width="40px"
+                        fill="#6366f1"
+                        className="animate-bounce"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0.6 }}
+                        exit={{ opacity: 0 }}
+                        transition={{
+                            opacity: { duration: 0.5, ease: "easeInOut", delay: 0.3 },
+                        }}
                     >
-                        <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                        ></circle>
-                        <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                    </svg>
+                        <path d="M400-120q-66 0-113-47t-47-113q0-66 47-113t113-47q23 0 42.5 5.5T480-418v-422h240v160H560v400q0 66-47 113t-113 47Z" />
+                    </motion.svg>
                 </div>
             )}
         </div>

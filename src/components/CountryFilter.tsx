@@ -205,7 +205,7 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
                                     y: "scroll",
                                 },
                             }}
-                            className="max-h-72 pt-2 pb-2 pl-2 pr-3"
+                            className="max-h-72 pt-2 pb-2 pl-2 pr-4"
                         >
                             {/* Option for "All Countries" */}
                             <div
