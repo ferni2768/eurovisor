@@ -60,13 +60,13 @@ export default function FilterStatusMessage({
                 />
 
                 <div className="font-semibold text-white flex items-center justify-center gap-2 px-3 w-full">
-                    <div style={{ width: "32px", display: "flex", justifyContent: "center" }}>
-                        {selectedCountry ? (
-                            selectedCountry === "YU" ? (
+                    {selectedCountry ? (
+                        selectedCountry === "YU" || selectedCountry === "CS" ? (
+                            <div style={{ width: "70px", display: "flex", justifyContent: "center" }}>
                                 <div className="flex">
                                     <Flag
                                         code="RS"
-                                        style={{ height: "1.5em", width: "2em", marginRight: "2px" }}
+                                        style={{ height: "1.5em", width: "2em", marginRight: "4px" }}
                                         className="rounded inline-block"
                                     />
                                     <Flag
@@ -75,17 +75,20 @@ export default function FilterStatusMessage({
                                         className="rounded inline-block"
                                     />
                                 </div>
-                            ) : (
+                            </div>
+                        ) : (
+                            <div style={{ width: "32px", display: "flex", justifyContent: "center" }}>
                                 <Flag
                                     code={selectedCountry}
                                     style={{ height: "1.5em", width: "2em" }}
                                     className="rounded inline-block"
                                 />
-                            )
-                        ) : (
+                            </div>
+                        )) : (
+                        <div style={{ width: "32px", display: "flex", justifyContent: "center" }}>
                             <span className="text-xl">{icon}</span>
-                        )}
-                    </div>
+                        </div>
+                    )}
                     <span className="truncate">{message}</span>
                 </div>
             </div>

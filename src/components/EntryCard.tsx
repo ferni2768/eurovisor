@@ -167,11 +167,11 @@ export default function EntryCard({
 
                 <div className="flex items-center text-sm text-white mb-4">
                     <span className="flex items-center">
-                        {country === "YU" ? (
+                        {country === "YU" || country === "CS" ? (
                             <div className="flex mr-1">
                                 <Flag
                                     code="RS"
-                                    style={{ height: "1.2em", width: "1.8em", marginRight: "2px" }}
+                                    style={{ height: "1.2em", width: "1.8em", marginRight: "4px" }}
                                     className="rounded inline-block"
                                 />
                                 <Flag

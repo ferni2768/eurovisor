@@ -5,7 +5,7 @@ import { getBackgroundHueConfig } from '../utils/backgroundHueConfig';
 export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
     // Configuration object for customization
     const settings = {
-        bubbleCount: 30,
+        bubbleCount: 25,
         baseMinBubbleSize: 200,
         baseMaxBubbleSizeRange: 400,
         baseSpeedFactor: 0.5,
@@ -26,8 +26,8 @@ export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
     };
 
     // Render resolution
-    const FIXED_WIDTH = 80;
-    const FIXED_HEIGHT = 45;
+    const FIXED_WIDTH = 40;
+    const FIXED_HEIGHT = 22;
 
     // Refs and state
     const blur = useRef(100);

@@ -94,7 +94,7 @@ const YearFilter: React.FC<YearFilterProps> = ({ selectedYear, onYearChange }) =
                     <motion.button
                         id="year-filter"
                         onClick={() => setIsOpen(!isOpen)}
-                        className="bg-white/55 rounded-full hover:bg-white/70 w-full border border-gray-300 shadow-sm focus:outline-none focus:border-white py-2 px-5 text-left flex items-center justify-between transition-all duration-200 cursor-pointer"
+                        className="min-w-0 w-full rounded-full bg-white/55 hover:bg-white/70 border border-gray-300 shadow-sm focus:outline-none focus:border-white py-2 px-5 text-left flex items-center justify-between transition-all duration-200 cursor-pointer"
                         layout
                         animate={{
                             borderRadius: isOpen ? "1.5rem 1.5rem 0 0" : "1.5rem",
@@ -172,7 +172,7 @@ const YearFilter: React.FC<YearFilterProps> = ({ selectedYear, onYearChange }) =
                                 duration: 0.3,
                                 ease: "easeInOut",
                             }}
-                            className="ml-2 overflow-hidden"
+                            className="ml-2 flex-shrink-0 overflow-hidden"
                         >
                             <motion.button
                                 onClick={(e) => {

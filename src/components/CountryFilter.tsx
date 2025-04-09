@@ -130,7 +130,7 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
                     <motion.button
                         id="country-filter"
                         onClick={() => setIsOpen(!isOpen)}
-                        className="w-full rounded-full bg-white/55 hover:bg-white/70 border border-gray-300 shadow-sm focus:outline-none focus:border-white py-2 px-5 text-left flex items-center justify-between transition-all duration-200 cursor-pointer"
+                        className="min-w-0 w-full rounded-full bg-white/55 hover:bg-white/70 border border-gray-300 shadow-sm focus:outline-none focus:border-white py-2 px-5 text-left flex items-center justify-between transition-all duration-200 cursor-pointer"
                         layout
                         animate={{
                             borderRadius: isOpen ? "1.5rem 1.5rem 0 0" : "1.5rem",
@@ -144,11 +144,11 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
                             <span className="text-black">Loading countries...</span>
                         ) : selectedCountryObj ? (
                             <div className="flex items-center gap-2">
-                                {selectedCountryObj.code === "YU" ? (
+                                {selectedCountryObj.code === "YU" || selectedCountryObj.code === "CS" ? (
                                     <div className="flex">
                                         <Flag
                                             code="RS"
-                                            style={{ height: "1.5em", width: "2em", marginRight: "2px" }}
+                                            style={{ height: "1.5em", width: "2em", marginRight: "4px" }}
                                             className="rounded inline-block"
                                         />
                                         <Flag
@@ -262,14 +262,14 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
                                         }}
                                         className="cursor-pointer hover:bg-gray-500 rounded-2xl py-2 px-3 flex items-center"
                                     >
-                                        {country.code === "YU" ? (
+                                        {country.code === "YU" || country.code === "CS" ? (
                                             <div className="flex">
                                                 <Flag
                                                     code="RS"
                                                     style={{
                                                         height: "1.5em",
                                                         width: "2em",
-                                                        marginRight: "2px",
+                                                        marginRight: "4px",
                                                     }}
                                                     className="rounded inline-block"
                                                 />
@@ -302,7 +302,7 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
                                 duration: 0.3,
                                 ease: "easeInOut",
                             }}
-                            className="ml-2 overflow-hidden"
+                            className="ml-2 flex-shrink-0 overflow-hidden"
                         >
                             <motion.button
                                 onClick={(e) => {
