@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import EntryCard from "./EntryCard";
 import { EntryResult } from "@/types/eurovision";
-import { motion, AnimatePresence, useReducedMotion, delay } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
+import ErrorCard from "./ErrorCard";
 
 interface ResultsListProps {
     results: EntryResult[];
@@ -30,8 +31,7 @@ interface CustomAnimationProps {
 
 // Memoized EntryCard to prevent re-renders when layout changes
 const MemoizedEntryCard = React.memo(EntryCard, (prevProps, nextProps) => {
-    return prevProps.contestantId === nextProps.contestantId &&
-        prevProps.year === nextProps.year;
+    return prevProps.contestantId === nextProps.contestantId && prevProps.year === nextProps.year;
 });
 
 // LazyCard component that reserves space via a placeholder even if not in view
@@ -129,6 +129,45 @@ const LazyCard: React.FC<LazyCardProps> = React.memo(({ result, index, numberOfC
         Math.floor(nextProps.index / nextProps.numberOfColumns);
 });
 
+// Error-specific custom properties and variants to mimic entry card transitions
+const errorCustomProps: CustomAnimationProps = {
+    delay: 0.2,
+    initialScale: 0.95,
+    initialY: 40,
+    initialBlur: 5,
+    exitScale: 0.95,
+};
+
+const errorCardVariants = {
+    hidden: (custom: CustomAnimationProps) => ({
+        opacity: 0,
+        scale: custom.initialScale,
+        y: custom.initialY,
+        filter: `blur(${custom.initialBlur}px)`,
+    }),
+    visible: (custom: CustomAnimationProps) => ({
+        opacity: 1,
+        scale: 1,
+        y: 0,
+        filter: "none",
+        transition: {
+            delay: custom.delay,
+            duration: 0.3,
+            ease: "easeOut",
+        },
+    }),
+    exit: (custom: CustomAnimationProps) => ({
+        opacity: 0,
+        scale: custom.exitScale,
+        y: -custom.initialY,
+        filter: `blur(${custom.initialBlur}px)`,
+        transition: {
+            duration: 0.3,
+            ease: "easeIn",
+        },
+    }),
+};
+
 const ResultsList: React.FC<ResultsListProps> = ({
     results,
     loading,
@@ -143,12 +182,19 @@ const ResultsList: React.FC<ResultsListProps> = ({
     const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const orientationChangeInProgressRef = useRef(false);
 
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [nextErrorMessage, setNextErrorMessage] = useState<string | null>(null);
+    const [pendingError, setPendingError] = useState<string | null>(null);
+
+    const [isExitingError, setIsExitingError] = useState(false);
+    const [isExiting, setIsExiting] = useState(false);
+    const [animatingComponent, setAnimatingComponent] = useState<'none' | 'error' | 'entries'>('none');
+
+    const [showEntriesAfterErrorExit, setShowEntriesAfterErrorExit] = useState(false);
+    const [showErrorAfterEntriesExit, setShowErrorAfterEntriesExit] = useState(false);
+
     // Track current visible results
     const [visibleResults, setVisibleResults] = useState<EntryResult[]>([]);
-
-    // Track if we're in the exiting animation phase
-    const [isExiting, setIsExiting] = useState(false);
-
     // Generate a unique key for the results list based on filters
     const resultsKey = `${selectedYear || "all"}-${selectedCountry || "all"}-${showingWinners ? "winners" : "all"}`;
 
@@ -156,11 +202,10 @@ const ResultsList: React.FC<ResultsListProps> = ({
     const calculateTotalHeight = (resultsList: EntryResult[]) => {
         if (!resultsList.length) return 0;
 
-        const cardHeight = 200; // Estimated height of each card in pixels
-        const gapSize = 24; // Gap size in pixels (6 in tailwind's gap-6)
+        const cardHeight = 200;
+        const gapSize = 24;
         const totalRows = Math.ceil(resultsList.length / numberOfColumns);
 
-        // Calculate total height including gaps
         return totalRows * cardHeight + (totalRows - 1) * gapSize;
     };
 
@@ -228,27 +273,94 @@ const ResultsList: React.FC<ResultsListProps> = ({
     useEffect(() => {
         if (visibleResults.length > 0) {
             setIsExiting(true);
+            setAnimatingComponent('entries');
         }
     }, [selectedYear, selectedCountry, showingWinners]);
 
     // Update visible results when not in exiting state
     useEffect(() => {
-        if (!isExiting && results.length > 0 && !loading) {
+        if (!isExiting && results.length > 0 && !loading && animatingComponent === 'none') {
             setVisibleResults(results);
-        } else if (!isExiting && results.length === 0 && !loading) {
+        } else if (!isExiting && results.length === 0 && !loading && animatingComponent === 'none') {
             setVisibleResults([]);
         }
-    }, [results, loading, isExiting]);
+    }, [results, loading, isExiting, animatingComponent]);
 
-    // Handle animation completion
-    const handleExitComplete = () => {
+    // Handle animation completion for entries
+    const handleEntriesExitComplete = () => {
         setIsExiting(false);
-        // After exit animation completes, update to the latest results
-        setVisibleResults(loading ? [] : results);
+
+        if (showErrorAfterEntriesExit) {
+            // Now that entries have exited, show the error
+            setErrorMessage(pendingError);
+            setPendingError(null);
+            setShowErrorAfterEntriesExit(false);
+            setAnimatingComponent('error');
+        } else {
+            // Update to the latest results
+            setVisibleResults(loading ? [] : results);
+            setAnimatingComponent('none');
+        }
     };
 
+    // Handle animation completion for error
+    const handleErrorExitComplete = () => {
+        setIsExitingError(false);
+
+        if (nextErrorMessage) {
+            // If we have a next error message, show it now
+            setErrorMessage(nextErrorMessage);
+            setNextErrorMessage(null);
+            setAnimatingComponent('error');
+        } else if (showEntriesAfterErrorExit) {
+            // Now that error has exited, show the entries
+            setVisibleResults(loading ? [] : results);
+            setShowEntriesAfterErrorExit(false);
+            setAnimatingComponent('entries');
+        } else {
+            setErrorMessage(null);
+            setAnimatingComponent('none');
+        }
+    };
+
+    // Handle error state changes
+    useEffect(() => {
+        if (error !== errorMessage && error !== pendingError && error !== nextErrorMessage) {
+            if (error) {
+                // If we have a new error
+                if (visibleResults.length > 0) {
+                    // If we have entries showing, exit them first
+                    setPendingError(error);
+                    setIsExiting(true);
+                    setShowErrorAfterEntriesExit(true);
+                } else if (errorMessage) {
+                    // If we already had an error, animate out the old one first
+                    setNextErrorMessage(errorMessage);
+                    setIsExitingError(true);
+                    setAnimatingComponent('error');
+
+                    setTimeout(async () => {
+                        setIsExitingError(false);
+                        await setErrorMessage(error);
+                    }, 300);
+                } else {
+                    // If we didn't have an error before and no entries, just show the new one
+                    setErrorMessage(error);
+                    setAnimatingComponent('error');
+                }
+            }
+        }
+
+        if (!error && animatingComponent === 'error' && results.length > 0) {
+            setErrorMessage(null);
+            setTimeout(() => {
+                setAnimatingComponent('none');
+            }, 300);
+        }
+    }, [error, errorMessage, pendingError, nextErrorMessage, results, visibleResults.length]);
+
     // Initial loading state
-    if (visibleResults.length === 0 && loading && !isExiting) {
+    if (visibleResults.length === 0 && loading && !isExiting && !errorMessage && animatingComponent === 'none') {
         return (
             <div className="relative" style={{ height: "300px" }}>
                 <div className="absolute top-1/2 mt-10 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
@@ -275,41 +387,51 @@ const ResultsList: React.FC<ResultsListProps> = ({
         );
     }
 
-    if (error) {
-        return (
-            <div
-                className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative"
-                role="alert"
-            >
-                <strong className="font-bold">Error: </strong>
-                <span className="block sm:inline">{error}</span>
-            </div>
-        );
-    }
-
-    if (visibleResults.length === 0 && !loading && !isExiting) { return (<></>); }
-
 
     return (
         <div className="mb-16 relative">
-            <AnimatePresence mode="wait" onExitComplete={handleExitComplete}>
-                <div
-                    key={isExiting ? "exiting-" + resultsKey : resultsKey}
-                    ref={containerRef}
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                    style={{ minHeight: `${calculateTotalHeight(visibleResults)}px` }}
-                >
-                    {visibleResults.map((result, index) => (
-                        <LazyCard
-                            key={`${result.year}-${result.contestantId}`}
-                            result={result}
-                            index={index}
-                            numberOfColumns={numberOfColumns}
-                            initialRowCount={initialRowCount}
-                        />
-                    ))}
-                </div>
+            {/* Error card with AnimatePresence */}
+            <AnimatePresence mode="wait" onExitComplete={handleErrorExitComplete}>
+                {errorMessage && (
+                    <motion.div
+                        key={`error-${error}`}
+                        custom={errorCustomProps}
+                        variants={errorCardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                    >
+                        <ErrorCard error={errorMessage} />
+                    </motion.div>
+                )}
             </AnimatePresence>
+
+            {/* Only show results if there's no error or we're transitioning from error to results */}
+            {(!errorMessage || (isExitingError && showEntriesAfterErrorExit)) && (
+                <AnimatePresence
+                    mode="wait"
+                    onExitComplete={handleEntriesExitComplete}
+                >
+                    {(visibleResults.length > 0 || isExiting) && (
+                        <div
+                            key={isExiting ? "exiting-" + resultsKey : resultsKey}
+                            ref={containerRef}
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                            style={{ minHeight: `${calculateTotalHeight(visibleResults)}px` }}
+                        >
+                            {visibleResults.map((result, index) => (
+                                <LazyCard
+                                    key={`${result.year}-${result.contestantId}`}
+                                    result={result}
+                                    index={index}
+                                    numberOfColumns={numberOfColumns}
+                                    initialRowCount={initialRowCount}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </AnimatePresence>
+            )}
 
             {/* Show loading spinner when exiting and loading new results */}
             {isExiting && loading && (
