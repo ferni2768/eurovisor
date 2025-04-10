@@ -25,6 +25,7 @@ export const countryNameToCode: Record<string, string> = {
     "Ireland": "IE",
     "Israel": "IL",
     "Italy": "IT",
+    "Kazakhstan": "KZ",
     "Latvia": "LV",
     "Lithuania": "LT",
     "Luxembourg": "LU",
