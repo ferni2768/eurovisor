@@ -54,6 +54,7 @@ export default function Home() {
   const [countryNames, setCountryNames] = useState<Record<string, string>>({});
   const [initialDataLoaded, setInitialDataLoaded] = useState<boolean>(false);
   const [showingWinners, setShowingWinners] = useState<boolean>(false);
+  const [showFooter, setShowFooter] = useState<boolean>(false);
 
   // Ref to hold the current AbortController for cancellation
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -208,6 +209,18 @@ export default function Home() {
     }
   }, [selectedYear, selectedCountry, applyFilters, initialDataLoaded]);
 
+  // Handle footer visibility with delay and animations
+  useEffect(() => {
+    if (!loading) {
+      const timer = setTimeout(() => {
+        setShowFooter(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowFooter(false);
+    }
+  }, [loading]);
+
 
   return (
     <>
@@ -216,35 +229,54 @@ export default function Home() {
         selectedCountry={selectedCountry}
       />
 
-      <div className="min-h-screen relative p-4.5">
-        <header className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-indigo-50">Eurovisor</h1>
-          <p className="text-gray-300">Explore Eurovision Song Contest performances</p>
-        </header>
+      <div className="min-h-screen flex flex-col relative p-4.5">
+        <div className="flex-grow">
+          <header className="mb-8 text-center">
+            <h1 className="text-4xl font-bold text-indigo-50">Eurovisor</h1>
+            <p className="text-gray-300">Explore Eurovision Song Contest performances</p>
+          </header>
 
-        <div className="max-w-6xl mx-auto">
-          <FilterSection
-            selectedYear={selectedYear}
-            selectedCountry={selectedCountry}
-            onYearChange={setSelectedYear}
-            onCountryChange={setSelectedCountry}
-          />
+          <div className="max-w-6xl mx-auto">
+            <FilterSection
+              selectedYear={selectedYear}
+              selectedCountry={selectedCountry}
+              onYearChange={setSelectedYear}
+              onCountryChange={setSelectedCountry}
+            />
 
-          <FilterStatusMessage
-            selectedYear={selectedYear}
-            selectedCountry={selectedCountry}
-            showingWinners={showingWinners}
-          />
+            <FilterStatusMessage
+              selectedYear={selectedYear}
+              selectedCountry={selectedCountry}
+              showingWinners={showingWinners}
+            />
 
-          <ResultsList
-            results={results}
-            loading={loading}
-            error={error}
-            selectedYear={selectedYear}
-            selectedCountry={selectedCountry}
-            showingWinners={showingWinners}
-          />
+            <ResultsList
+              results={results}
+              loading={loading}
+              error={error}
+              selectedYear={selectedYear}
+              selectedCountry={selectedCountry}
+              showingWinners={showingWinners}
+            />
+          </div>
         </div>
+
+        <footer
+          className="text-center mt-2 mb-2 text-sm text-white/"
+          style={{
+            transition: 'opacity 0.5s',
+            opacity: showFooter ? 1 : 0
+          }}
+        >
+          <a
+            href="https://github.com/ferni2768/eurovisor"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:underline"
+          >
+            v0.1 by ferni2768
+          </a>
+        </footer>
       </div>
     </>
   );
