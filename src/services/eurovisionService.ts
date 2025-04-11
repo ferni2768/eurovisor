@@ -11,10 +11,10 @@ export const getCountries = async (options?: RequestInit) => {
         return await response.json();
     } catch (error: any) {
         if (error.name === "AbortError") {
-            console.log("getCountries request aborted");
+            // console.log("getCountries request aborted");
             return;
         }
-        console.error("Error fetching countries:", error);
+        // console.error("Error fetching countries:", error);
         throw error;
     }
 };
@@ -29,10 +29,10 @@ export const getYears = async (options?: RequestInit) => {
         return await response.json();
     } catch (error: any) {
         if (error.name === "AbortError") {
-            console.log("getYears request aborted");
+            // console.log("getYears request aborted");
             return;
         }
-        console.error("Error fetching years:", error);
+        // console.error("Error fetching years:", error);
         throw error;
     }
 };
@@ -47,10 +47,10 @@ export const getContests = async (options?: RequestInit) => {
         return await response.json();
     } catch (error: any) {
         if (error.name === "AbortError") {
-            console.log("getContests request aborted");
+            // console.log("getContests request aborted");
             return;
         }
-        console.error("Error fetching contests:", error);
+        // console.error("Error fetching contests:", error);
         throw error;
     }
 };
@@ -65,10 +65,10 @@ export const getContestByYear = async (year: number, options?: RequestInit) => {
         return await response.json();
     } catch (error: any) {
         if (error.name === "AbortError") {
-            console.log(`getContestByYear request aborted for year ${year}`);
+            // console.log(`getContestByYear request aborted for year ${year}`);
             return;
         }
-        console.error(`Error fetching contest for year ${year}:`, error);
+        // console.error(`Error fetching contest for year ${year}:`, error);
         throw error;
     }
 };
@@ -83,10 +83,10 @@ export const getContestantDetails = async (year: number, id: number, options?: R
         return await response.json();
     } catch (error: any) {
         if (error.name === "AbortError") {
-            console.log(`getContestantDetails request aborted for year ${year}, id ${id}`);
+            // console.log(`getContestantDetails request aborted for year ${year}, id ${id}`);
             return;
         }
-        console.error(`Error fetching contestant details for year ${year}, id ${id}:`, error);
+        // console.error(`Error fetching contestant details for year ${year}, id ${id}:`, error);
         throw error;
     }
 };

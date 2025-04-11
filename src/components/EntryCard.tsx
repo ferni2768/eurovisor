@@ -74,7 +74,7 @@ export default function EntryCard({
                     setError("No video URL available for this entry");
                 }
             } catch (err) {
-                console.error("Error fetching video details:", err);
+                // console.error("Error fetching video details:", err);
                 setError("Failed to load video details");
             } finally {
                 setLoading(false);

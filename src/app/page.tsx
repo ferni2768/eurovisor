@@ -191,10 +191,10 @@ export default function Home() {
     } catch (err: any) {
       // If the error is an abort error, simply return
       if (err.name === "AbortError") {
-        console.log("Request aborted");
+        // console.log("Request aborted");
         return;
       }
-      console.error("Error applying filters:", err);
+      // console.error("Error applying filters:", err);
       setError("Failed to apply filters. Please try again.");
       setShowingWinners(false);
     } finally {

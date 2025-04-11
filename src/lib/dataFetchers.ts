@@ -33,14 +33,14 @@ export const fetchWinners = async (
                 getContestByYear(contest.year, { signal })
                     .then(contestData => {
                         if (!contestData || !contestData.rounds) {
-                            console.log(`No contest data or rounds for year ${contest.year}`);
+                            // console.log(`No contest data or rounds for year ${contest.year}`);
                             return null;
                         }
 
                         // Find the final round
                         const finalRound = contestData.rounds.find((r: Round) => r && r.name === "final");
                         if (!finalRound || !finalRound.performances) {
-                            console.log(`No final round or performances for year ${contest.year}`);
+                            // console.log(`No final round or performances for year ${contest.year}`);
                             return null;
                         }
 
@@ -49,13 +49,13 @@ export const fetchWinners = async (
                             (p: Performance) => p && p.place === 1
                         );
                         if (!winnerPerformance) {
-                            console.log(`No winner performance for year ${contest.year}`);
+                            // console.log(`No winner performance for year ${contest.year}`);
                             return null;
                         }
 
                         // Find the contestant details
                         if (!contestData.contestants) {
-                            console.log(`No contestants for year ${contest.year}`);
+                            // console.log(`No contestants for year ${contest.year}`);
                             return null;
                         }
 
@@ -63,7 +63,7 @@ export const fetchWinners = async (
                             (c: Contestant) => c && c.id === winnerPerformance.contestantId
                         );
                         if (!winnerContestant) {
-                            console.log(`No winner contestant for year ${contest.year}`);
+                            // console.log(`No winner contestant for year ${contest.year}`);
                             return null;
                         }
 
@@ -80,7 +80,7 @@ export const fetchWinners = async (
                         };
                     })
                     .catch(err => {
-                        console.error(`Error fetching contest ${contest.year}:`, err);
+                        // console.error(`Error fetching contest ${contest.year}:`, err);
                         return null;
                     })
             );
@@ -94,7 +94,7 @@ export const fetchWinners = async (
 
         setResults(winners);
     } catch (err) {
-        console.error("Error fetching winners:", err);
+        // console.error("Error fetching winners:", err);
         setError("Failed to load Eurovision winners. Please try again later.");
         setShowingWinners(false);
     } finally {
@@ -175,7 +175,7 @@ export const fetchCountryEntries = async (
                         };
                     })
                     .catch(err => {
-                        console.error(`Error fetching contest ${contest.year}:`, err);
+                        // console.error(`Error fetching contest ${contest.year}:`, err);
                         return null;
                     })
             );
@@ -189,7 +189,7 @@ export const fetchCountryEntries = async (
 
         setResults(countryEntries);
     } catch (err) {
-        console.error("Error fetching country entries:", err);
+        // console.error("Error fetching country entries:", err);
         setError(`Failed to load entries for ${countriesData[countryCode] || countryCode}. Please try again later.`);
     } finally {
         setLoading(false);
@@ -309,7 +309,7 @@ export const fetchYearEntries = async (
 
         setResults(allEntries);
     } catch (err) {
-        console.error(`Error fetching entries for year ${year}:`, err);
+        // console.error(`Error fetching entries for year ${year}:`, err);
         setError(`Failed to load entries for Eurovision ${year}. Please try again later.`);
     } finally {
         setLoading(false);
@@ -404,7 +404,7 @@ export const fetchCountryInYear = async (
             didQualify
         }]);
     } catch (err) {
-        console.error(`Error fetching entry for ${countriesData[countryCode] || countryCode} in ${year}:`, err);
+        // console.error(`Error fetching entry for ${countriesData[countryCode] || countryCode} in ${year}:`, err);
         setError(`Failed to load entry for ${countriesData[countryCode] || countryCode} in Eurovision ${year}. Please try again later.`);
     } finally {
         setLoading(false);
@@ -440,7 +440,7 @@ export const fetchInitialData = async (
 
         return { countriesData, contestsData };
     } catch (err) {
-        console.error("Failed to load initial data:", err);
+        // console.error("Failed to load initial data:", err);
         setError("Failed to load initial data. Please try again later.");
         return null;
     } finally {
