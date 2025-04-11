@@ -232,7 +232,15 @@ export default function Home() {
       <div className="min-h-screen flex flex-col relative p-4.5">
         <div className="flex-grow">
           <header className="mb-8 text-center">
-            <h1 className="text-4xl font-bold text-indigo-50">Eurovisor</h1>
+            <h1
+              onClick={() => {
+                setSelectedYear(null);
+                setSelectedCountry(null);
+              }}
+              className="text-4xl font-bold text-indigo-50 cursor-pointer transition-transform duration-200 hover:-translate-y-1"
+            >
+              Eurovisor
+            </h1>
             <p className="text-gray-300">Explore Eurovision Song Contest performances</p>
           </header>
 
