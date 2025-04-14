@@ -86,7 +86,7 @@ const YearFilter: React.FC<YearFilterProps> = ({ selectedYear, onYearChange }) =
 
     return (
         <div className="w-full md:w-1/2" ref={dropdownRef}>
-            <label htmlFor="year-filter" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="year-filter" className="block text-sm font-medium text-white mb-1">
                 Filter by Year
             </label>
             <div className="flex items-center">
@@ -94,7 +94,7 @@ const YearFilter: React.FC<YearFilterProps> = ({ selectedYear, onYearChange }) =
                     <motion.button
                         id="year-filter"
                         onClick={() => setIsOpen(!isOpen)}
-                        className="bg-white/75 w-full border border-gray-300 shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-indigo-500 py-2 px-5 text-left flex items-center justify-between transition-all duration-200 cursor-pointer"
+                        className="min-w-0 w-full rounded-full bg-white/55 hover:bg-white/70 border border-gray-300 shadow-sm focus:outline-none focus:border-white py-2 px-5 text-left flex items-center justify-between transition-all duration-200 cursor-pointer"
                         layout
                         animate={{
                             borderRadius: isOpen ? "1.5rem 1.5rem 0 0" : "1.5rem",
@@ -104,9 +104,9 @@ const YearFilter: React.FC<YearFilterProps> = ({ selectedYear, onYearChange }) =
                         }}
                     >
                         {selectedYear ? (
-                            <span className="text-gray-500">{selectedYear}</span>
+                            <span className="text-black">{selectedYear}</span>
                         ) : (
-                            <span className="text-gray-400">All Years</span>
+                            <span className="text-black">All Years</span>
                         )}
                         <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -117,7 +117,7 @@ const YearFilter: React.FC<YearFilterProps> = ({ selectedYear, onYearChange }) =
                         variants={variants}
                         animate={isOpen ? "open" : "closed"}
                         initial="closed"
-                        className="absolute z-10 w-full bg-white border border-gray-300 shadow-lg overflow-hidden"
+                        className="absolute z-10 w-full bg-neutral-800 border border-gray-300 shadow-lg overflow-hidden"
                         style={{ borderTop: "none" }}
                     >
                         <OverlayScrollbarsComponent
@@ -134,7 +134,7 @@ const YearFilter: React.FC<YearFilterProps> = ({ selectedYear, onYearChange }) =
                                     y: "scroll",
                                 },
                             }}
-                            className="max-h-72 pt-2 pb-2 pl-2 pr-3"
+                            className="max-h-72 pt-2 pb-2 pl-2 pr-4"
                         >
                             {/* Option for "All Years" */}
                             <div
@@ -142,9 +142,9 @@ const YearFilter: React.FC<YearFilterProps> = ({ selectedYear, onYearChange }) =
                                     onYearChange(null);
                                     setIsOpen(false);
                                 }}
-                                className="cursor-pointer hover:bg-gray-100 rounded-2xl py-2 px-3 flex items-center justify-between"
+                                className="cursor-pointer hover:bg-gray-500 rounded-2xl py-2 px-3 flex items-center justify-between"
                             >
-                                <span className="text-gray-400">All Years</span>
+                                <span className="text-gray-50">All Years</span>
                             </div>
                             {/* Options for each year */}
                             {years.map((year) => (
@@ -154,9 +154,9 @@ const YearFilter: React.FC<YearFilterProps> = ({ selectedYear, onYearChange }) =
                                         onYearChange(year);
                                         setIsOpen(false);
                                     }}
-                                    className="cursor-pointer hover:bg-gray-100 rounded-2xl py-2 px-3 flex items-center"
+                                    className="cursor-pointer hover:bg-gray-500 rounded-2xl py-2 px-3 flex items-center"
                                 >
-                                    <span className="text-gray-500">{year}</span>
+                                    <span className="text-gray-50">{year}</span>
                                 </div>
                             ))}
                         </OverlayScrollbarsComponent>
@@ -172,7 +172,7 @@ const YearFilter: React.FC<YearFilterProps> = ({ selectedYear, onYearChange }) =
                                 duration: 0.3,
                                 ease: "easeInOut",
                             }}
-                            className="ml-2 overflow-hidden"
+                            className="ml-2 flex-shrink-0 overflow-hidden"
                         >
                             <motion.button
                                 onClick={(e) => {

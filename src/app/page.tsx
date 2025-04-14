@@ -31,10 +31,15 @@ const customScrollbarStyles = `
     --os-size: 12px;
     --os-padding-perpendicular: 2px;
   }
-  
-  /* Additional styling for the scrollbar */
+
   .os-scrollbar-handle {
     border-radius: 10px;
+    margin-right: 2px;
+    background-color: rgba(255, 255, 255, 0.4);
+  }
+
+  .os-scrollbar-track .os-scrollbar-handle:hover {
+    background-color: rgba(200, 200, 200, 0.8) !important;
   }
 `;
 
@@ -49,6 +54,7 @@ export default function Home() {
   const [countryNames, setCountryNames] = useState<Record<string, string>>({});
   const [initialDataLoaded, setInitialDataLoaded] = useState<boolean>(false);
   const [showingWinners, setShowingWinners] = useState<boolean>(false);
+  const [showFooter, setShowFooter] = useState<boolean>(false);
 
   // Ref to hold the current AbortController for cancellation
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -185,10 +191,10 @@ export default function Home() {
     } catch (err: any) {
       // If the error is an abort error, simply return
       if (err.name === "AbortError") {
-        console.log("Request aborted");
+        // console.log("Request aborted");
         return;
       }
-      console.error("Error applying filters:", err);
+      // console.error("Error applying filters:", err);
       setError("Failed to apply filters. Please try again.");
       setShowingWinners(false);
     } finally {
@@ -203,39 +209,82 @@ export default function Home() {
     }
   }, [selectedYear, selectedCountry, applyFilters, initialDataLoaded]);
 
+  // Handle footer visibility with delay and animations
+  useEffect(() => {
+    if (!loading) {
+      const timer = setTimeout(() => {
+        setShowFooter(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowFooter(false);
+    }
+  }, [loading]);
+
 
   return (
     <>
-      <BackgroundCanvas />
-      <div className="min-h-screen relative p-4">
-        <header className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-indigo-50">Eurovisor</h1>
-          <p className="text-gray-300">Explore Eurovision Song Contest performances</p>
-        </header>
+      <BackgroundCanvas
+        selectedYear={selectedYear}
+        selectedCountry={selectedCountry}
+      />
 
-        <div className="max-w-6xl mx-auto">
-          <FilterSection
-            selectedYear={selectedYear}
-            selectedCountry={selectedCountry}
-            onYearChange={setSelectedYear}
-            onCountryChange={setSelectedCountry}
-          />
+      <div className="min-h-screen flex flex-col relative p-4.5">
+        <div className="flex-grow">
+          <header className="mb-8 text-center">
+            <h1
+              onClick={() => {
+                setSelectedYear(null);
+                setSelectedCountry(null);
+              }}
+              className="text-4xl font-bold text-indigo-50 cursor-pointer transition-transform duration-200 hover:-translate-y-1"
+            >
+              Eurovisor
+            </h1>
+            <p className="text-gray-300">Explore Eurovision Song Contest performances</p>
+          </header>
 
-          <FilterStatusMessage
-            selectedYear={selectedYear}
-            selectedCountry={selectedCountry}
-            showingWinners={showingWinners}
-          />
+          <div className="max-w-6xl mx-auto">
+            <FilterSection
+              selectedYear={selectedYear}
+              selectedCountry={selectedCountry}
+              onYearChange={setSelectedYear}
+              onCountryChange={setSelectedCountry}
+            />
 
-          <ResultsList
-            results={results}
-            loading={loading}
-            error={error}
-            selectedYear={selectedYear}
-            selectedCountry={selectedCountry}
-            showingWinners={showingWinners}
-          />
+            <FilterStatusMessage
+              selectedYear={selectedYear}
+              selectedCountry={selectedCountry}
+              showingWinners={showingWinners}
+            />
+
+            <ResultsList
+              results={results}
+              loading={loading}
+              error={error}
+              selectedYear={selectedYear}
+              selectedCountry={selectedCountry}
+              showingWinners={showingWinners}
+            />
+          </div>
         </div>
+
+        <footer
+          className="text-center mt-2 mb-2 text-sm text-white/"
+          style={{
+            transition: 'opacity 0.5s',
+            opacity: showFooter ? 1 : 0
+          }}
+        >
+          <a
+            href="https://github.com/ferni2768/eurovisor"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:underline"
+          >
+            v0.1 by ferni2768
+          </a>
+        </footer>
       </div>
     </>
   );

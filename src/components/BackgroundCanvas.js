@@ -1,126 +1,350 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { createNoise3D } from 'simplex-noise';
+import { getBackgroundHueConfig } from '../utils/backgroundHueConfig';
 
-export default function BackgroundCanvas() {
+export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
     // Configuration object for customization
     const settings = {
-        bubbleCount: 70,
-        minBubbleSize: 50,
-        maxBubbleSizeRange: 50,
-        speedFactor: 0.5,
+        bubbleCount: 25,
+        baseMinBubbleSize: 200,
+        baseMaxBubbleSizeRange: 400,
+        baseSpeedFactor: 0.5,
+        referenceWidth: 1920,
+        referenceHeight: 1080,
         minLifetime: 1000,
         lifetimeRange: 2000,
         baseHue: 0,
         hueRange: 360,
         cycleBaseHue: false,
-        maxOpacity: 0.3,
-        minOpacity: 0.2,
+        minOpacity: 0.6,
+        maxOpacity: 0.9,
         backgroundColor: 'rgba(249, 250, 251, 0)',
-        blurAmount: 150,
+        blurAmount: 65,
+        blurScale: 2,
+        fadeInDuration: 1000,
+        fadeOutDuration: 350,
     };
 
+    // Render resolution
+    const FIXED_WIDTH = 40;
+    const FIXED_HEIGHT = 22;
+
+    // Refs and state
+    const blur = useRef(100);
     const hiddenCanvasRef = useRef(null);
     const visibleCanvasRef = useRef(null);
+    const noiseGenerator = useRef(null);
+    const bubblesRef = useRef([]);
+    const currentHueRef = useRef({ value: settings.baseHue });
+    const animationRef = useRef(null);
+    const [hueConfig, setHueConfig] = useState([]);
+    const prevHueConfigRef = useRef([]);
+    const prevWindowSizeRef = useRef({ width: 0, height: 0 });
 
+    // Scale factor functions based on the fixed resolution
+    const getSpeedScaleFactor = () => {
+        const widthRatio = FIXED_WIDTH / settings.referenceWidth;
+        const heightRatio = FIXED_HEIGHT / settings.referenceHeight;
+        return (widthRatio + heightRatio) / 4;
+    };
+
+    const getSizeScaleFactor = () => FIXED_WIDTH / settings.referenceWidth;
+
+    // Initialize noise generator and hue configuration on mount
     useEffect(() => {
+        noiseGenerator.current = createNoise3D();
+        const initialHueConfig = getBackgroundHueConfig({ selectedYear, selectedCountry });
+        setHueConfig(initialHueConfig);
+        prevHueConfigRef.current = initialHueConfig;
+        prevWindowSizeRef.current = { width: window.innerWidth, height: window.innerHeight };
+        return () => {
+            if (animationRef.current) cancelAnimationFrame(animationRef.current);
+        };
+    }, []);
+
+    // Update hue configuration when filters change
+    useEffect(() => {
+        const newHueConfig = getBackgroundHueConfig({ selectedYear, selectedCountry });
+        if (JSON.stringify(newHueConfig) !== JSON.stringify(hueConfig)) {
+            prevHueConfigRef.current = hueConfig;
+            setHueConfig(newHueConfig);
+        }
+    }, [selectedYear, selectedCountry, hueConfig]);
+
+    // Create new bubbles with current settings, distributing hues proportionally
+    const createNewBubbles = (speedScale, sizeScale) => {
+        let hueIndexCounter = 0;
+        return Array.from({ length: settings.bubbleCount }, () => {
+            const hueConfigIndex = hueIndexCounter % hueConfig.length;
+            hueIndexCounter++;
+            return new Circle(true, hueConfigIndex, speedScale, sizeScale);
+        });
+    };
+
+    // Circle class to manage individual bubble properties and behavior
+    class Circle {
+        constructor(isNew = false, hueConfigIndex = 0, speedScale = 1, sizeScale = 1) {
+            this.isNew = isNew;
+            this.hueConfigIndex = hueConfigIndex;
+            this.opacity = isNew ? 0 : settings.maxOpacity;
+            this.transitionState = isNew ? 'fade-in' : 'stable';
+            this.transitionProgress = 0;
+            this.speedScale = speedScale;
+            this.sizeScale = sizeScale;
+            this.reset();
+        }
+
+        reset(preserveOpacity = false) {
+            const canvas = hiddenCanvasRef.current;
+            if (!canvas) return;
+
+            // Generate random position on the fixed resolution canvas
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+            this.x = x;
+            this.y = y;
+
+            const currentConfig = hueConfig[this.hueConfigIndex % hueConfig.length] || [0, 360];
+            const baseHue = currentConfig[0];
+            const hueRange = currentConfig[1];
+
+            // Generate noise for hue
+            const noise = noiseGenerator.current(
+                x * 0.005,
+                y * 0.005,
+                currentHueRef.current.value * 0.01
+            );
+
+            // Normalize noise from [-1, 1] to [0, 1] and calculate hue
+            this.hue = baseHue + ((noise + 1) / 2) * hueRange;
+            if (hueRange < 360) this.hue = this.hue % 360;
+
+            // Calculate radius scaled by the size scale factor
+            this.radius = (settings.baseMinBubbleSize + Math.random() * settings.baseMaxBubbleSizeRange) * this.sizeScale;
+
+            // Set movement direction and speed
+            const direction = Math.random() * Math.PI * 2;
+            const speed = (Math.random() + 0.1) * settings.baseSpeedFactor * this.speedScale;
+            this.vx = Math.cos(direction) * speed;
+            this.vy = Math.sin(direction) * speed;
+
+            // Reset lifetime
+            this.life = 0;
+            this.totalLife = settings.minLifetime + Math.random() * settings.lifetimeRange;
+
+            // Reset opacity and transition state if not preserving opacity
+            if (!preserveOpacity) {
+                this.opacity = this.isNew ? 0 : settings.maxOpacity;
+                this.transitionState = this.isNew ? 'fade-in' : 'stable';
+                this.transitionProgress = 0;
+            }
+        }
+
+        move(deltaTime) {
+            // Only update movement if the bubble is still within its lifetime
+            // Once its lifetime is exceeded, freeze the position
+            if (this.life < this.totalLife) {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life++;
+                // When lifetime is exceeded, freeze movement by setting velocity to zero
+                if (this.life >= this.totalLife) {
+                    this.vx = 0;
+                    this.vy = 0;
+                }
+            }
+
+            // Only trigger fade-out on off-screen condition if the bubble is still active
+            if (this.isOffScreen() && this.life < this.totalLife && this.transitionState === 'stable') {
+                this.transitionState = 'fade-out';
+                this.transitionProgress = 0;
+            }
+
+            // Handle transitions; fade-in is allowed until complete.
+            if (this.transitionState === 'fade-in') {
+                this.transitionProgress += deltaTime;
+                const progress = Math.min(this.transitionProgress / settings.fadeInDuration, 1);
+                this.opacity = progress * settings.maxOpacity;
+                if (progress >= 1) {
+                    this.transitionState = 'stable';
+                    this.opacity = settings.maxOpacity;
+                }
+            } else if (this.transitionState === 'fade-out') {
+                this.transitionProgress += deltaTime;
+                const progress = Math.min(this.transitionProgress / settings.fadeOutDuration, 1);
+                this.opacity = (1 - progress) * settings.maxOpacity;
+                if (progress >= 1) {
+                    // For bubbles that are fading out due to going off screen,
+                    // we reset them. (This condition applies only to bubbles still active)
+                    this.reset(true);
+                }
+            }
+            // Otherwise, if the bubble's lifetime is over, it remains static with the same opacity
+        }
+
+        isOffScreen() {
+            const canvas = hiddenCanvasRef.current;
+            if (!canvas) return true;
+            return (
+                this.x < -this.radius ||
+                this.x > canvas.width + this.radius ||
+                this.y < -this.radius ||
+                this.y > canvas.height + this.radius
+            );
+        }
+
+        render(ctx) {
+            const fade = Math.sin((this.life / this.totalLife) * Math.PI);
+            const baseAlpha = settings.minOpacity + fade * (settings.maxOpacity - settings.minOpacity);
+            const alpha = baseAlpha * this.opacity;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${this.hue}, 100%, 12%, ${alpha})`;
+            ctx.fill();
+        }
+    }
+
+    // Main canvas setup and animation effect
+    useEffect(() => {
+        if (!hiddenCanvasRef.current || !visibleCanvasRef.current) return;
+
         const hiddenCanvas = hiddenCanvasRef.current;
         const visibleCanvas = visibleCanvasRef.current;
         const hiddenCtx = hiddenCanvas.getContext('2d');
         const visibleCtx = visibleCanvas.getContext('2d');
-        const noiseGenerator = createNoise3D();
-        const currentHue = { value: settings.baseHue }; // Mutable object for hue cycling
 
-        // Circle class to manage individual bubble properties and behavior
-        class Circle {
-            constructor() {
-                this.reset();
-            }
+        // Set the hidden canvas to a fixed resolution
+        hiddenCanvas.width = FIXED_WIDTH;
+        hiddenCanvas.height = FIXED_HEIGHT;
 
-            reset() {
-                const x = Math.random() * hiddenCanvas.width;
-                const y = Math.random() * hiddenCanvas.height;
-                const noise = noiseGenerator(x * 0.005, y * 0.005, currentHue.value * 0.01);
-                this.x = x;
-                this.y = y;
-                this.hue = currentHue.value + noise * settings.hueRange;
-                this.radius = settings.minBubbleSize + Math.random() * settings.maxBubbleSizeRange;
-                const direction = Math.random() * Math.PI * 2;
-                const speed = (Math.random() + 0.1) * settings.speedFactor;
-                this.vx = Math.cos(direction) * speed;
-                this.vy = Math.sin(direction) * speed;
-                this.life = 0;
-                this.totalLife = settings.minLifetime + Math.random() * settings.lifetimeRange;
-            }
-
-            move() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.life++;
-                if (this.isOffScreen() || this.life > this.totalLife) {
-                    this.reset();
-                }
-            }
-
-            isOffScreen() {
-                return (
-                    this.x < -this.radius ||
-                    this.x > hiddenCanvas.width + this.radius ||
-                    this.y < -this.radius ||
-                    this.y > hiddenCanvas.height + this.radius
-                );
-            }
-
-            render() {
-                const fade = Math.sin((this.life / this.totalLife) * Math.PI);
-                const alpha = settings.minOpacity + fade * (settings.maxOpacity - settings.minOpacity);
-                hiddenCtx.beginPath();
-                hiddenCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                hiddenCtx.fillStyle = `hsla(${this.hue}, 90%, 55%, ${alpha})`;
-                hiddenCtx.fill();
-            }
-        }
-
-        // Initialize bubbles
-        let bubbles = Array.from({ length: settings.bubbleCount }, () => new Circle());
-
-        // Resize handler to adjust canvas dimensions and reinitialize bubbles
-        const adjustCanvas = () => {
-            hiddenCanvas.width = window.innerWidth;
-            hiddenCanvas.height = window.innerHeight;
+        // Set the visible canvas to fill the window
+        const setVisibleCanvasSize = () => {
             visibleCanvas.width = window.innerWidth;
             visibleCanvas.height = window.innerHeight;
-            bubbles = Array.from({ length: settings.bubbleCount }, () => new Circle());
+        };
+        setVisibleCanvasSize();
+
+        // Compute scale factors based on the fixed resolution
+        const speedScale = getSpeedScaleFactor();
+        const sizeScale = getSizeScaleFactor();
+
+        if (bubblesRef.current.length === 0 && hueConfig.length > 0) {
+            bubblesRef.current = createNewBubbles(speedScale, sizeScale);
+        }
+
+        // Function to check for significant resize and update blur
+        const checkSignificantResize = () => {
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+
+            const isSignificantResize =
+                Math.abs(prevWindowSizeRef.current.width - windowWidth) > 10 ||
+                Math.abs(prevWindowSizeRef.current.height - windowHeight) > 100;
+
+            if (isSignificantResize) {
+                prevWindowSizeRef.current = { width: windowWidth, height: windowHeight };
+
+                // Recalculate blur based on the greater of width or height
+                const widthRatio = windowWidth / settings.referenceWidth;
+                const heightRatio = (windowHeight * 1.5) / (settings.referenceHeight * 1.5);
+                const maxRatio = Math.max(widthRatio, heightRatio);
+
+                blur.current = Math.max(settings.blurAmount * (1 + (maxRatio - 1) * settings.blurScale), settings.blurAmount);
+
+                // Update the canvas style to reflect the new blur value
+                if (visibleCanvas) {
+                    visibleCanvas.style.filter = `blur(${blur.current}px)`;
+                }
+            }
         };
 
-        adjustCanvas();
-        window.addEventListener('resize', adjustCanvas);
+        // Resize visible canvas on window resize and orientation change
+        const adjustVisibleCanvas = () => {
+            setVisibleCanvasSize();
+            checkSignificantResize();
+        };
 
-        // Animation loop
-        const renderFrame = () => {
+        window.addEventListener('resize', adjustVisibleCanvas);
+        if (window.screen && window.screen.orientation) {
+            window.screen.orientation.addEventListener('change', adjustVisibleCanvas);
+        } else if (window.orientation !== undefined) {
+            window.addEventListener('orientationchange', adjustVisibleCanvas);
+        }
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', adjustVisibleCanvas);
+        }
+
+        let lastTime = 0;
+        const renderFrame = (timestamp) => {
+            const deltaTime = lastTime ? timestamp - lastTime : 16;
+            lastTime = timestamp;
+
+            // Optionally update the base hue if cycling is enabled
             if (settings.cycleBaseHue) {
-                currentHue.value += settings.speedFactor;
+                currentHueRef.current.value += settings.baseSpeedFactor;
             }
 
-            bubbles.forEach(bubble => bubble.move());
-
+            // Clear and render on the fixed hidden canvas
             hiddenCtx.clearRect(0, 0, hiddenCanvas.width, hiddenCanvas.height);
-            visibleCtx.fillStyle = settings.backgroundColor;
-            visibleCtx.fillRect(0, 0, visibleCanvas.width, visibleCanvas.height);
+            bubblesRef.current.forEach(bubble => {
+                bubble.move(deltaTime);
+                bubble.render(hiddenCtx);
+            });
 
-            bubbles.forEach(bubble => bubble.render());
+            // Draw the fixed resolution hidden canvas onto the visible canvas, scaling to fill
+            visibleCtx.clearRect(0, 0, visibleCanvas.width, visibleCanvas.height);
+            visibleCtx.drawImage(
+                hiddenCanvas,
+                0, 0, hiddenCanvas.width, hiddenCanvas.height,
+                0, 0, visibleCanvas.width, visibleCanvas.height
+            );
 
-            visibleCtx.filter = `blur(${settings.blurAmount}px)`;
-            visibleCtx.drawImage(hiddenCanvas, 0, 0);
-            visibleCtx.filter = 'none';
-
-            requestAnimationFrame(renderFrame);
+            animationRef.current = requestAnimationFrame(renderFrame);
         };
 
-        renderFrame();
+        // Initial blur calculation
+        const widthRatio = visibleCanvas.width / settings.referenceWidth;
+        const heightRatio = visibleCanvas.height / settings.referenceWidth;
+        const maxRatio = Math.max(widthRatio, heightRatio);
 
-        // Cleanup resize listener
-        return () => window.removeEventListener('resize', adjustCanvas);
-    }, []);
+        blur.current = Math.max(
+            settings.blurAmount * (1 + (maxRatio - 1) * settings.blurScale),
+            80
+        );
+
+        // Set initial blur
+        visibleCanvas.style.filter = `blur(${blur.current}px)`;
+
+        animationRef.current = requestAnimationFrame(renderFrame);
+
+        return () => {
+            window.removeEventListener('resize', adjustVisibleCanvas);
+            if (window.screen && window.screen.orientation) {
+                window.screen.orientation.removeEventListener('change', adjustVisibleCanvas);
+            } else if (window.orientation !== undefined) {
+                window.removeEventListener('orientationchange', adjustVisibleCanvas);
+            }
+            if (window.visualViewport) {
+                window.visualViewport.removeEventListener('resize', adjustVisibleCanvas);
+            }
+            cancelAnimationFrame(animationRef.current);
+        };
+    }, [hueConfig]);
+
+    // When hue configuration changes, fade out old bubbles and add new ones (for those still active)
+    useEffect(() => {
+        if (hueConfig.length === 0) return;
+        bubblesRef.current.forEach(bubble => {
+            if (bubble.life < bubble.totalLife) {
+                bubble.transitionState = 'fade-out';
+                bubble.transitionProgress = 0;
+            }
+        });
+        const speedScale = getSpeedScaleFactor();
+        const sizeScale = getSizeScaleFactor();
+        const newBubbles = createNewBubbles(speedScale, sizeScale);
+        bubblesRef.current = [...bubblesRef.current, ...newBubbles];
+    }, [hueConfig]);
 
 
     return (
@@ -128,7 +352,15 @@ export default function BackgroundCanvas() {
             <canvas ref={hiddenCanvasRef} style={{ display: 'none' }} />
             <canvas
                 ref={visibleCanvasRef}
-                style={{ position: 'fixed', top: 0, left: 0, height: '120vh', opacity: 0.25, filter: 'blur(250px)' }}
+                style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    opacity: 1,
+                    filter: `blur(${blur.current}px)`,
+                }}
             />
         </>
     );
