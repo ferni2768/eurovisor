@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { createNoise3D } from 'simplex-noise';
 import { getBackgroundHueConfig } from '../utils/backgroundHueConfig';
 
@@ -42,13 +42,17 @@ export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
     const prevWindowSizeRef = useRef({ width: 0, height: 0 });
 
     // Scale factor functions based on the fixed resolution
-    const getSpeedScaleFactor = () => {
+    const getSpeedScaleFactor = useCallback(() => {
         const widthRatio = FIXED_WIDTH / settings.referenceWidth;
         const heightRatio = FIXED_HEIGHT / settings.referenceHeight;
         return (widthRatio + heightRatio) / 4;
-    };
+    }, [settings.referenceWidth, settings.referenceHeight]);
 
-    const getSizeScaleFactor = () => FIXED_WIDTH / settings.referenceWidth;
+    // Calculate size scale factor based on the fixed resolution
+    const getSizeScaleFactor = useCallback(() =>
+        FIXED_WIDTH / settings.referenceWidth,
+        [settings.referenceWidth]
+    );
 
     // Initialize noise generator and hue configuration on mount
     useEffect(() => {
@@ -60,7 +64,7 @@ export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
         return () => {
             if (animationRef.current) cancelAnimationFrame(animationRef.current);
         };
-    }, []);
+    }, [selectedYear, selectedCountry]);
 
     // Update hue configuration when filters change
     useEffect(() => {
@@ -72,14 +76,15 @@ export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
     }, [selectedYear, selectedCountry, hueConfig]);
 
     // Create new bubbles with current settings, distributing hues proportionally
-    const createNewBubbles = (speedScale, sizeScale) => {
+    const createNewBubbles = useCallback((speedScale, sizeScale) => {
         let hueIndexCounter = 0;
         return Array.from({ length: settings.bubbleCount }, () => {
             const hueConfigIndex = hueIndexCounter % hueConfig.length;
             hueIndexCounter++;
             return new Circle(true, hueConfigIndex, speedScale, sizeScale);
         });
-    };
+        // esnlint-disable-next-line react-hooks/exhaustive-deps
+    }, [settings.bubbleCount, hueConfig]);
 
     // Circle class to manage individual bubble properties and behavior
     class Circle {
@@ -329,7 +334,8 @@ export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
             }
             cancelAnimationFrame(animationRef.current);
         };
-    }, [hueConfig]);
+    }, [hueConfig, createNewBubbles, getSizeScaleFactor, getSpeedScaleFactor, settings.baseSpeedFactor, settings.blurAmount,
+        settings.blurScale, settings.cycleBaseHue, settings.referenceHeight, settings.referenceWidth]);
 
     // When hue configuration changes, fade out old bubbles and add new ones (for those still active)
     useEffect(() => {
@@ -344,7 +350,7 @@ export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
         const sizeScale = getSizeScaleFactor();
         const newBubbles = createNewBubbles(speedScale, sizeScale);
         bubblesRef.current = [...bubblesRef.current, ...newBubbles];
-    }, [hueConfig]);
+    }, [hueConfig, createNewBubbles, getSizeScaleFactor, getSpeedScaleFactor]);
 
 
     return (

@@ -46,8 +46,8 @@ const customScrollbarStyles = `
 export default function Home() {
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
-  const [contests, setContests] = useState<any[]>([]);
-  const [currentContest, setCurrentContest] = useState<Contest | null>(null);
+  const [contests, setContests] = useState<Contest[]>([]);
+  const [, setCurrentContest] = useState<Contest | null>(null);
   const [results, setResults] = useState<EntryResult[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -188,9 +188,9 @@ export default function Home() {
           { setLoading, setError, setResults, signal: controller.signal }
         );
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // If the error is an abort error, simply return
-      if (err.name === "AbortError") {
+      if (err instanceof Error && err.name === "AbortError") {
         // console.log("Request aborted");
         return;
       }

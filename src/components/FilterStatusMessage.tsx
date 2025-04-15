@@ -9,11 +9,7 @@ interface FilterStatusMessageProps {
     showingWinners: boolean;
 }
 
-export default function FilterStatusMessage({
-    selectedYear,
-    selectedCountry,
-    showingWinners
-}: FilterStatusMessageProps) {
+export default function FilterStatusMessage({ selectedYear, selectedCountry }: FilterStatusMessageProps) {
     let message = "Eurovision Winners by Year";
     let icon = "🏆";
 

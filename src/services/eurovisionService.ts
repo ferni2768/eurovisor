@@ -9,13 +9,15 @@ export const getCountries = async (options?: RequestInit) => {
             throw new Error('Failed to fetch countries');
         }
         return await response.json();
-    } catch (error: any) {
-        if (error.name === "AbortError") {
+    } catch (error: unknown) {
+        if (error instanceof Error && error.name === "AbortError") {
             // console.log("getCountries request aborted");
             return;
         }
-        // console.error("Error fetching countries:", error);
-        throw error;
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new Error('An unknown error occurred');
     }
 };
 
@@ -27,13 +29,15 @@ export const getYears = async (options?: RequestInit) => {
             throw new Error('Failed to fetch years');
         }
         return await response.json();
-    } catch (error: any) {
-        if (error.name === "AbortError") {
+    } catch (error: unknown) {
+        if (error instanceof Error && error.name === "AbortError") {
             // console.log("getYears request aborted");
             return;
         }
-        // console.error("Error fetching years:", error);
-        throw error;
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new Error('An unknown error occurred');
     }
 };
 
@@ -45,13 +49,15 @@ export const getContests = async (options?: RequestInit) => {
             throw new Error('Failed to fetch contests');
         }
         return await response.json();
-    } catch (error: any) {
-        if (error.name === "AbortError") {
+    } catch (error: unknown) {
+        if (error instanceof Error && error.name === "AbortError") {
             // console.log("getContests request aborted");
             return;
         }
-        // console.error("Error fetching contests:", error);
-        throw error;
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new Error('An unknown error occurred');
     }
 };
 
@@ -63,13 +69,15 @@ export const getContestByYear = async (year: number, options?: RequestInit) => {
             throw new Error(`Failed to fetch contest for year ${year}`);
         }
         return await response.json();
-    } catch (error: any) {
-        if (error.name === "AbortError") {
+    } catch (error: unknown) {
+        if (error instanceof Error && error.name === "AbortError") {
             // console.log(`getContestByYear request aborted for year ${year}`);
             return;
         }
-        // console.error(`Error fetching contest for year ${year}:`, error);
-        throw error;
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new Error('An unknown error occurred');
     }
 };
 
@@ -81,12 +89,14 @@ export const getContestantDetails = async (year: number, id: number, options?: R
             throw new Error(`Failed to fetch contestant details for year ${year}, id ${id}`);
         }
         return await response.json();
-    } catch (error: any) {
-        if (error.name === "AbortError") {
+    } catch (error: unknown) {
+        if (error instanceof Error && error.name === "AbortError") {
             // console.log(`getContestantDetails request aborted for year ${year}, id ${id}`);
             return;
         }
-        // console.error(`Error fetching contestant details for year ${year}, id ${id}:`, error);
-        throw error;
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new Error('An unknown error occurred');
     }
 };

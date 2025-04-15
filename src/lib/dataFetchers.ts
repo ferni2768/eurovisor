@@ -3,7 +3,7 @@ import { EntryResult, Contest, Contestant, Performance, Round } from "@/types/eu
 
 // Function to fetch winners for all years
 export const fetchWinners = async (
-    contestsData: any[],
+    contestsData: Contest[],
     countriesData: Record<string, string>,
     callbacks: {
         setLoading: (loading: boolean) => void;
@@ -79,7 +79,7 @@ export const fetchWinners = async (
                             didQualify: true
                         };
                     })
-                    .catch(err => {
+                    .catch(_err => {
                         // console.error(`Error fetching contest ${contest.year}:`, err);
                         return null;
                     })
@@ -93,7 +93,7 @@ export const fetchWinners = async (
         winners.sort((a, b) => b.year - a.year);
 
         setResults(winners);
-    } catch (err) {
+    } catch (_err) {
         // console.error("Error fetching winners:", err);
         setError("Failed to load Eurovision winners. Please try again later.");
         setShowingWinners(false);
@@ -105,7 +105,7 @@ export const fetchWinners = async (
 // Function to fetch all entries for a specific country
 export const fetchCountryEntries = async (
     countryCode: string,
-    contestsData: any[],
+    contestsData: Contest[],
     countriesData: Record<string, string>,
     callbacks: {
         setLoading: (loading: boolean) => void;
@@ -174,7 +174,7 @@ export const fetchCountryEntries = async (
                             didQualify
                         };
                     })
-                    .catch(err => {
+                    .catch(_err => {
                         // console.error(`Error fetching contest ${contest.year}:`, err);
                         return null;
                     })
@@ -188,7 +188,7 @@ export const fetchCountryEntries = async (
         countryEntries.sort((a, b) => b.year - a.year);
 
         setResults(countryEntries);
-    } catch (err) {
+    } catch (_err) {
         // console.error("Error fetching country entries:", err);
         setError(`Failed to load entries for ${countriesData[countryCode] || countryCode}. Please try again later.`);
     } finally {
@@ -308,7 +308,7 @@ export const fetchYearEntries = async (
         });
 
         setResults(allEntries);
-    } catch (err) {
+    } catch (_err) {
         // console.error(`Error fetching entries for year ${year}:`, err);
         setError(`Failed to load entries for Eurovision ${year}. Please try again later.`);
     } finally {
@@ -403,7 +403,7 @@ export const fetchCountryInYear = async (
             isWinner,
             didQualify
         }]);
-    } catch (err) {
+    } catch (_err) {
         // console.error(`Error fetching entry for ${countriesData[countryCode] || countryCode} in ${year}:`, err);
         setError(`Failed to load entry for ${countriesData[countryCode] || countryCode} in Eurovision ${year}. Please try again later.`);
     } finally {
@@ -417,7 +417,7 @@ export const fetchInitialData = async (
         setLoading: (loading: boolean) => void;
         setError: (error: string | null) => void;
         setCountryNames: (countries: Record<string, string>) => void;
-        setContests: (contests: any[]) => void;
+        setContests: (contests: Contest[]) => void;
         setInitialDataLoaded: (loaded: boolean) => void;
         signal?: AbortSignal;
     }
@@ -439,7 +439,7 @@ export const fetchInitialData = async (
         setInitialDataLoaded(true);
 
         return { countriesData, contestsData };
-    } catch (err) {
+    } catch (_err) {
         // console.error("Failed to load initial data:", err);
         setError("Failed to load initial data. Please try again later.");
         return null;

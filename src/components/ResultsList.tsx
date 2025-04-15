@@ -122,12 +122,13 @@ const LazyCard: React.FC<LazyCardProps> = React.memo(({ result, index, numberOfC
     );
 }, (prevProps, nextProps) => {
     // Only re-render if the entry data changes or if index changes significantly
-    // This prevents re-renders when only the layout changes slightly
     return prevProps.result.contestantId === nextProps.result.contestantId &&
         prevProps.result.year === nextProps.result.year &&
         Math.floor(prevProps.index / prevProps.numberOfColumns) ===
         Math.floor(nextProps.index / nextProps.numberOfColumns);
 });
+
+LazyCard.displayName = "LazyCard";
 
 // Error-specific custom properties and variants to mimic entry card transitions
 const errorCustomProps: CustomAnimationProps = {
@@ -275,7 +276,7 @@ const ResultsList: React.FC<ResultsListProps> = ({
             setIsExiting(true);
             setAnimatingComponent('entries');
         }
-    }, [selectedYear, selectedCountry, showingWinners]);
+    }, [selectedYear, selectedCountry, showingWinners, visibleResults.length]);
 
     // Update visible results when not in exiting state
     useEffect(() => {
@@ -357,7 +358,7 @@ const ResultsList: React.FC<ResultsListProps> = ({
                 setAnimatingComponent('none');
             }, 300);
         }
-    }, [error, errorMessage, pendingError, nextErrorMessage, results, visibleResults.length]);
+    }, [error, errorMessage, pendingError, nextErrorMessage, results, visibleResults.length, animatingComponent]);
 
     // Initial loading state
     if (visibleResults.length === 0 && loading && !isExiting && !errorMessage && animatingComponent === 'none') {
