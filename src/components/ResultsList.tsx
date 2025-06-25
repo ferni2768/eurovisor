@@ -193,9 +193,10 @@ const ResultsList: React.FC<ResultsListProps> = ({
 
     const [showEntriesAfterErrorExit, setShowEntriesAfterErrorExit] = useState(false);
     const [showErrorAfterEntriesExit, setShowErrorAfterEntriesExit] = useState(false);
-
-    // Track current visible results
     const [visibleResults, setVisibleResults] = useState<EntryResult[]>([]);
+
+    // Track the previous results key to detect filter changes
+    const [prevResultsKey, setPrevResultsKey] = useState<string>("");
     // Generate a unique key for the results list based on filters
     const resultsKey = `${selectedYear || "all"}-${selectedCountry || "all"}-${showingWinners ? "winners" : "all"}`;
 
@@ -270,20 +271,22 @@ const ResultsList: React.FC<ResultsListProps> = ({
         setInitialRowCount(visibleRows);
     }, []);
 
-    // Handle changes to filters - trigger exit animations
+    // Handle changes to filters - trigger exit animations only when resultsKey actually changes
     useEffect(() => {
-        if (visibleResults.length > 0) {
+        if (resultsKey !== prevResultsKey && visibleResults.length > 0) {
             setIsExiting(true);
             setAnimatingComponent('entries');
+            setPrevResultsKey(resultsKey);
+        } else if (resultsKey !== prevResultsKey) {
+            // If no visible results but key changed, just update the key
+            setPrevResultsKey(resultsKey);
         }
-    }, [selectedYear, selectedCountry, showingWinners, visibleResults.length]);
+    }, [resultsKey, prevResultsKey, visibleResults.length]);
 
-    // Update visible results when not in exiting state
+    // Update visible results when not in exiting state - simplified logic
     useEffect(() => {
-        if (!isExiting && results.length > 0 && !loading && animatingComponent === 'none') {
+        if (!isExiting && !loading && animatingComponent === 'none') {
             setVisibleResults(results);
-        } else if (!isExiting && results.length === 0 && !loading && animatingComponent === 'none') {
-            setVisibleResults([]);
         }
     }, [results, loading, isExiting, animatingComponent]);
 
@@ -298,8 +301,8 @@ const ResultsList: React.FC<ResultsListProps> = ({
             setShowErrorAfterEntriesExit(false);
             setAnimatingComponent('error');
         } else {
-            // Update to the latest results
-            setVisibleResults(loading ? [] : results);
+            // Update to the latest results - ensure we always get the full results array
+            setVisibleResults(loading ? [] : [...results]);
             setAnimatingComponent('none');
         }
     };
@@ -315,7 +318,7 @@ const ResultsList: React.FC<ResultsListProps> = ({
             setAnimatingComponent('error');
         } else if (showEntriesAfterErrorExit) {
             // Now that error has exited, show the entries
-            setVisibleResults(loading ? [] : results);
+            setVisibleResults(loading ? [] : [...results]);
             setShowEntriesAfterErrorExit(false);
             setAnimatingComponent('entries');
         } else {
@@ -408,30 +411,29 @@ const ResultsList: React.FC<ResultsListProps> = ({
             </AnimatePresence>
 
             {/* Only show results if there's no error or we're transitioning from error to results */}
-            {(!errorMessage || (isExitingError && showEntriesAfterErrorExit)) && (
-                <AnimatePresence
-                    mode="wait"
-                    onExitComplete={handleEntriesExitComplete}
-                >
-                    {(visibleResults.length > 0 || isExiting) && (
-                        <div
-                            key={isExiting ? "exiting-" + resultsKey : resultsKey}
-                            ref={containerRef}
-                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                            style={{ minHeight: `${calculateTotalHeight(visibleResults)}px` }}
-                        >
-                            {visibleResults.map((result, index) => (
-                                <LazyCard
-                                    key={`${result.year}-${result.contestantId}`}
-                                    result={result}
-                                    index={index}
-                                    numberOfColumns={numberOfColumns}
-                                    initialRowCount={initialRowCount}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </AnimatePresence>
+            {(!errorMessage || (isExitingError && showEntriesAfterErrorExit)) && (<AnimatePresence
+                mode="wait"
+                onExitComplete={handleEntriesExitComplete}
+            >
+                {(visibleResults.length > 0 || isExiting) && (
+                    <div
+                        key={isExiting ? `exiting-${resultsKey}-${Date.now()}` : `showing-${resultsKey}`}
+                        ref={containerRef}
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                        style={{ minHeight: `${calculateTotalHeight(visibleResults)}px` }}
+                    >
+                        {visibleResults.map((result, index) => (
+                            <LazyCard
+                                key={`${result.year}-${result.contestantId}`}
+                                result={result}
+                                index={index}
+                                numberOfColumns={numberOfColumns}
+                                initialRowCount={initialRowCount}
+                            />
+                        ))}
+                    </div>
+                )}
+            </AnimatePresence>
             )}
 
             {/* Show loading spinner when exiting and loading new results */}

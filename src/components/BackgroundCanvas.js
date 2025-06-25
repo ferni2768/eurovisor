@@ -38,6 +38,7 @@ export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
     const currentHueRef = useRef({ value: settings.baseHue });
     const animationRef = useRef(null);
     const [hueConfig, setHueConfig] = useState([]);
+    const [isSmallScreen, setIsSmallScreen] = useState(false);
     const prevHueConfigRef = useRef([]);
     const prevWindowSizeRef = useRef({ width: 0, height: 0 });
 
@@ -204,7 +205,7 @@ export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
             const alpha = baseAlpha * this.opacity;
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-            ctx.fillStyle = `hsla(${this.hue}, 100%, 12%, ${alpha})`;
+            ctx.fillStyle = `hsla(${this.hue}, 100%, 23%, ${alpha})`;
             ctx.fill();
         }
     }
@@ -222,10 +223,22 @@ export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
         hiddenCanvas.width = FIXED_WIDTH;
         hiddenCanvas.height = FIXED_HEIGHT;
 
-        // Set the visible canvas to fill the window
+        // Set the visible canvas to fill the window (responsive sizing)
         const setVisibleCanvasSize = () => {
-            visibleCanvas.width = window.innerWidth;
-            visibleCanvas.height = window.innerHeight;
+            // Check if we're on a small screen and update state
+            const smallScreen = window.innerWidth <= 600 || window.innerHeight <= 600;
+            setIsSmallScreen(smallScreen);
+
+            if (smallScreen) {
+                // Add padding for small screens to eliminate vignette
+                const blurPadding = Math.max(blur.current * 0.8, 60);
+                visibleCanvas.width = window.innerWidth + (blurPadding * 2);
+                visibleCanvas.height = window.innerHeight + (blurPadding * 2);
+            } else {
+                // Exact window size for large screens to maintain full vignette
+                visibleCanvas.width = window.innerWidth;
+                visibleCanvas.height = window.innerHeight;
+            }
         };
         setVisibleCanvasSize();
 
@@ -360,12 +373,22 @@ export default function BackgroundCanvas({ selectedYear, selectedCountry }) {
                 ref={visibleCanvasRef}
                 style={{
                     position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
+                    top: isSmallScreen
+                        ? `-${Math.max(blur.current * 0.8, 60)}px`
+                        : '0',
+                    left: isSmallScreen
+                        ? `-${Math.max(blur.current * 0.8, 60)}px`
+                        : '0',
+                    width: isSmallScreen
+                        ? `calc(100% + ${Math.max(blur.current * 1.6, 120)}px)`
+                        : '100%',
+                    height: isSmallScreen
+                        ? `calc(100% + ${Math.max(blur.current * 1.6, 120)}px)`
+                        : '100%',
                     opacity: 1,
                     filter: `blur(${blur.current}px)`,
+                    pointerEvents: 'none',
+                    zIndex: -1,
                 }}
             />
         </>

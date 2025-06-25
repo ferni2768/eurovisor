@@ -24,7 +24,7 @@ export const getCountries = async (options?: RequestInit) => {
 // Get all contest years
 export const getYears = async (options?: RequestInit) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/contests/years`, options);
+        const response = await fetch(`${API_BASE_URL}/senior/contests/years`, options);
         if (!response.ok) {
             throw new Error('Failed to fetch years');
         }
@@ -44,7 +44,7 @@ export const getYears = async (options?: RequestInit) => {
 // Get all contests
 export const getContests = async (options?: RequestInit) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/contests`, options);
+        const response = await fetch(`${API_BASE_URL}/senior/contests`, options);
         if (!response.ok) {
             throw new Error('Failed to fetch contests');
         }
@@ -64,7 +64,7 @@ export const getContests = async (options?: RequestInit) => {
 // Get contest details for a specific year
 export const getContestByYear = async (year: number, options?: RequestInit) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/contests/${year}`, options);
+        const response = await fetch(`${API_BASE_URL}/senior/contests/${year}`, options);
         if (!response.ok) {
             throw new Error(`Failed to fetch contest for year ${year}`);
         }
@@ -84,7 +84,7 @@ export const getContestByYear = async (year: number, options?: RequestInit) => {
 // Get contestant details
 export const getContestantDetails = async (year: number, id: number, options?: RequestInit) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/contests/${year}/contestants/${id}`, options);
+        const response = await fetch(`${API_BASE_URL}/senior/contests/${year}/contestants/${id}`, options);
         if (!response.ok) {
             throw new Error(`Failed to fetch contestant details for year ${year}, id ${id}`);
         }

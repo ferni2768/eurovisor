@@ -58,6 +58,8 @@ export default function Home() {
 
   // Ref to hold the current AbortController for cancellation
   const abortControllerRef = useRef<AbortController | null>(null);
+  // Debounce timer for fast filter changes
+  const filterDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize OverlayScrollbars
   const [initialize, instance] = useOverlayScrollbars({
@@ -202,10 +204,25 @@ export default function Home() {
     }
   }, [selectedYear, selectedCountry, contests, countryNames, initialDataLoaded]);
 
-  // Apply filters whenever they change
+  // Apply filters whenever they change with debouncing
   useEffect(() => {
     if (initialDataLoaded) {
-      applyFilters();
+      // Clear existing debounce timer
+      if (filterDebounceRef.current) {
+        clearTimeout(filterDebounceRef.current);
+      }
+
+      // Set up debounced filter application
+      filterDebounceRef.current = setTimeout(() => {
+        applyFilters();
+      }, 150);
+
+      // Cleanup function
+      return () => {
+        if (filterDebounceRef.current) {
+          clearTimeout(filterDebounceRef.current);
+        }
+      };
     }
   }, [selectedYear, selectedCountry, applyFilters, initialDataLoaded]);
 
@@ -282,7 +299,7 @@ export default function Home() {
             rel="noopener noreferrer"
             className="hover:underline"
           >
-            v0.1 by ferni2768
+            v0.2 by ferni2768
           </a>
         </footer>
       </div>

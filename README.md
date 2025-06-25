@@ -1,4 +1,4 @@
-# 🎤 Eurovisor v0.1 - Explore Eurovision Song Contest performances
+# 🎤 Eurovisor v0.2 - Explore Eurovision Song Contest performances
 [Link to the Live Demo](https://eurovisor.netlify.app/)
 
 Eurovisor is a web application that celebrates the energy and excitement of the Eurovision Song Contest! It displays performances filtered by year and country using data from the [Eurovision API](https://eurovisionapi.runasp.net/) and brings the magic of live shows right to your screen through the performance videos posted on YouTube. Whether you’re a devoted fan or a curious newcomer, dive in, explore, and enjoy the stunning performances from different eras and nations! 🎧

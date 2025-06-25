@@ -169,11 +169,14 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
                         ) : (
                             <span className="text-black">All Countries</span>
                         )}
-                        <svg
+
+                        <motion.svg
                             className="w-5 h-5 text-gray-500"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
+                            animate={{ rotate: isOpen ? 180 : 0 }}
+                            transition={{ duration: 0.15, ease: "easeOut" }}
                         >
                             <path
                                 strokeLinecap="round"
@@ -181,8 +184,9 @@ const CountryFilter: React.FC<CountryFilterProps> = ({
                                 strokeWidth={2}
                                 d="M19 9l-7 7-7-7"
                             />
-                        </svg>
+                        </motion.svg>
                     </motion.button>
+
                     {/* Dropdown container */}
                     <motion.div
                         variants={variants}
